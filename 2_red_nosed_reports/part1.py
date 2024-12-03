@@ -29,12 +29,21 @@ def asessSafety(data: list) -> bool:
     return True
 
 
+def count_safe_reports(reports : list) -> int:
+    total_safe = 0
+    for r in reports:
+        isSafe = asessSafety(r)
+        # print(isSafe)
+        if (isSafe):
+            total_safe += 1
+    return total_safe
+
+
 if __name__ == "__main__":
     # test data
     # reports = getInputData("test_input.txt")
     # real data
     reports = getInputData()
-
 
     # print(reports[28])
     # print(asessSafety(reports[28]))
@@ -42,12 +51,7 @@ if __name__ == "__main__":
     # print(reports[448])
     # print(asessSafety(reports[448]))
 
-    total_safe = 0
-    for r in reports:
-        isSafe = asessSafety(r)
-        # print(isSafe)
-        if (isSafe):
-            total_safe += 1
+    total_safe = count_safe_reports(reports)
     
     print(f'Total reports: {len(reports)}')
     print(f'Total un-safe reports: {len(reports) - total_safe}')
