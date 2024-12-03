@@ -10,26 +10,19 @@ def getInputData(filename="input.txt"):
     return data
 
 
-def is_safe(report: list, damped = False) -> bool:
+def is_safe(report: list, damped=False) -> bool:
     isIncreasing = report[0] < report[1]
     for i in range(0, len(report) - 1):
         difference = abs(report[i] - report[i+1])
 
         if (isIncreasing != (report[i] < report[i+1]) or (difference < 1 or difference > 3)):
-            if(damped):
-                print(report)
-                tuned_report = report.copy()
-                tuned_report.pop(i+1)
-                print(tuned_report)
-                if not is_safe(tuned_report, False):
+            if (damped):
+                for i in range(len(report)):
                     tuned_report = report.copy()
                     tuned_report.pop(i)
-                    return is_safe(tuned_report, False)
-                
-                return True
-            
-            else :
-                return False
+                    if is_safe(tuned_report, False):
+                        return True
+            return False
 
     return True
 
