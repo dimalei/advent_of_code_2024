@@ -10,30 +10,34 @@ def getInputData(filename="input.txt"):
     return data
 
 
-def asessSafety(data: list) -> bool:
-    isIncreasing = data[0] < data[1]
-    for i in range(0, len(data) - 1):
-        difference = abs(data[i] - data[i+1])
+def is_safe(report: list, damped = False) -> bool:
+    isIncreasing = report[0] < report[1]
+    for i in range(0, len(report) - 1):
+        difference = abs(report[i] - report[i+1])
 
-        # print(f'isIncreasing: {isIncreasing}')
-        # print(f'is actually increasing: {(data[i] < data[i+1])}')
+        if (isIncreasing != (report[i] < report[i+1]) or (difference < 1 or difference > 3)):
+            if(damped):
+                print(report)
+                tuned_report = report.copy()
+                tuned_report.pop(i+1)
+                print(tuned_report)
+                if not is_safe(tuned_report, False):
+                    tuned_report = report.copy()
+                    tuned_report.pop(i)
+                    return is_safe(tuned_report, False)
+                
+                return True
+            
+            else :
+                return False
 
-        if(isIncreasing != (data[i] < data[i+1])):
-            # print('direction changed')
-            return False
-        
-        if(difference < 1 or difference > 3):
-            # print('difference exeeded')
-            return False
-        
     return True
 
 
-def count_safe_reports(reports : list) -> int:
+def count_safe_reports(reports: list, damped: bool) -> int:
     total_safe = 0
     for r in reports:
-        isSafe = asessSafety(r)
-        # print(isSafe)
+        isSafe = is_safe(r, damped)
         if (isSafe):
             total_safe += 1
     return total_safe
@@ -45,15 +49,8 @@ if __name__ == "__main__":
     # real data
     reports = getInputData()
 
-    # print(reports[28])
-    # print(asessSafety(reports[28]))
+    total_safe = count_safe_reports(reports, True)
 
-    # print(reports[448])
-    # print(asessSafety(reports[448]))
-
-    total_safe = count_safe_reports(reports)
-    
     print(f'Total reports: {len(reports)}')
     print(f'Total un-safe reports: {len(reports) - total_safe}')
     print(f'Total safe reports: {total_safe}')
-
