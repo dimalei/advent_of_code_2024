@@ -5,7 +5,7 @@ def getInputData(filename="input.txt"):
             out.append(line.strip())
     return out
 
-
+# part 1
 def find_string(data: list, search_string: str):
     matches = 0
     for y in range(len(data)):
@@ -110,10 +110,30 @@ def star_search(data: list, x: int, y: int, search_string: str):
 
     return matches
 
+#part 2
+def a_search(data: list):
+    matches = 0
+    for y in range(len(data)):
+        for x in range(len(data[y])):
+            if data[y][x] == 'A':
+                matches += ms_search(data, x, y)
+    return matches
+
+
+def ms_search(data, x, y):
+    if (x - 1 >= 0) and (x + 1 < len(data[y])) and (y - 1 >= 0) and (y + 1 < len(data)):
+        se_string = data[y-1][x-1] + data[y+1][x+1]
+        ne_string = data[y+1][x-1] + data[y-1][x+1]
+        se = se_string == 'MS' or se_string == 'SM'
+        ne = ne_string == 'MS' or ne_string == 'SM'
+        if se and ne:
+            return 1
+    return 0
+
 
 if __name__ == "__main__":
     # data = getInputData("test_input.txt")
     data = getInputData()
 
-    # print(data)
     print(find_string(data, "XMAS"))
+    print(a_search(data))
