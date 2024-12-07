@@ -16,10 +16,10 @@ def get_input_data(filename="input.txt"):
 
 
 class Direction(Enum):
-    NORTH = (0, -1)
-    EAST = (1, 0)
-    SOUTH = (0, 1)
-    WEST = (-1, 0)
+    NORTH = (0, -1, '|')
+    EAST = (1, 0, '-')
+    SOUTH = (0, 1, '|')
+    WEST = (-1, 0, '-')
 
     def rotate_cw(current_direction):
         current_direction_index = list(Direction).index(current_direction)
@@ -59,7 +59,9 @@ class Map:
     def get_starting_position(self) -> Position:
         for y, line in enumerate(self.data):
             if "^" in line:
-                return Position(line.index("^"), y)
+                starting_position = Position(line.index("^"),y)
+                self.put_at('.' ,starting_position)
+                return starting_position
 
     def count_objects(self, object: str):
         counter = 0
@@ -68,6 +70,8 @@ class Map:
                 if object == row:
                     counter += 1
         return counter
+    
+    # def is_obstacle_opporunity
 
     def __str__(self):
         out = ""
@@ -104,11 +108,20 @@ class Guard:
         map_data.put_at('+', self.pos)
         self.heading = self.heading.rotate_cw()
 
+    def running_in_circles(self, map_data: Map) -> bool:
+        object_ahead = self.see_ahead(map_data)
+        print(object_ahead)
+        trail = self.heading.value[2]
+        if object_ahead == trail or object_ahead == '+':
+            return True
+        return False
+
 
 if __name__ == "__main__":
     my_map = Map(get_input_data("test_input.txt"))
     # my_map = Map(get_input_data())
-    my_guard = Guard(my_map.get_starting_position(), Direction.NORTH)
+    starting_position = my_map.get_starting_position()
+    my_guard = Guard(starting_position, Direction.NORTH)
 
     i = 100
 
@@ -116,22 +129,29 @@ if __name__ == "__main__":
     # print(my_map.get_at(Position(0,4)))
     # print(my_map.data[0][4])
 
+    my_map.put_at('O',Position(7,9))
+
+    obstacles = 0
+
     while i > 0:
         # i -= 1
         # os.system('cls' if os.name == 'nt' else 'clear')
         # print(my_map)
 
         object_ahead = my_guard.see_ahead(my_map)
+
         # print(object_ahead)
-        if object_ahead != '#':
-            my_guard.move(my_map)
-        else:
+        if object_ahead == '#' or object_ahead == 'O':
             my_guard.rotate_cw(my_map)
+        else:
+            my_guard.move(my_map)
+
+        if my_guard.running_in_circles(my_map):
+            print("running in circles")
+            break
 
         if object_ahead == 'E':
+            print('exit found')
             break
 
     print(my_map)
-    print("found an exit")
-
-    print(f"Locations visited: {my_map.count_objects('X')}")
