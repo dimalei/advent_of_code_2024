@@ -46,29 +46,21 @@ def part_1(updates: list, rules: dict):
 
 def place_suitable(page: int, new_order: list, rules: dict):
 
-    # print(f"checking page: {page}")
-    # print(f"order so far: {new_order}")
+    for i in range(len(new_order)+1):
 
-    for j in range(len(new_order)+1):
-
-        uncertain_order = new_order[:j] + [page] + new_order[j:]
-        # print(f"uncertain order: {uncertain_order}")
-
+        uncertain_order = new_order[:i] + [page] + new_order[i:]
         if (check_update(uncertain_order, rules)):
-            # print("order OK!")
             return uncertain_order
-
-        # print("order NOT ok! continue ...")
 
     # order can not be fixed
     return new_order
 
 
 def fix_order(update: list, rules: dict) -> list:
-    old_order = update
     new_order = []
 
-    for page in old_order:
+    # builds a new order incrementally and checks each step
+    for page in update:
         new_order = place_suitable(page, new_order, rules)
 
     return new_order
