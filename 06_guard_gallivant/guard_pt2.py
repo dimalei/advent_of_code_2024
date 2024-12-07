@@ -38,6 +38,9 @@ class Position:
 
     def __str__(self):
         return f"x: {self.x}, y: {self.y}"
+    
+    def copy(self):
+        return Position(self.x, self.y)
 
 
 class Map:
@@ -71,7 +74,19 @@ class Map:
                     counter += 1
         return counter
     
-    # def is_obstacle_opporunity
+    def is_obstacle_opporunity(self, pos: Position , heading : Direction) -> bool:
+        """checks if the block would be a suitable obstacle location"""
+        hypoteical_pos = pos.copy()
+        next_heading = heading.rotate_cw()
+        has_potential = False
+        while True:
+            location_ahead = pos.step(next_heading)
+            if location_ahead == '#' or location_ahead == 'O':
+                has_potential = True
+                break
+            if location_ahead == 'E':
+                return False
+        
 
     def __str__(self):
         out = ""
