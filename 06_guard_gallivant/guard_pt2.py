@@ -76,10 +76,12 @@ class Map:
 
     def __str__(self):
         out = ""
-        for l in self.data:
+        for y, l in enumerate(self.data):
+            out += f"{y:03} "
             for r in l:
+                if r == '.':
+                    r = ' '
                 out += r
-            out += "\n"
         return out
 
 
@@ -88,7 +90,7 @@ class Guard:
         self.pos = position
         self.heading = heading
 
-    def move(self, map_data: Map):
+    def step(self, map_data: Map):
 
         object_current_location = map_data.get_at(self.pos)
 
@@ -120,62 +122,80 @@ class Guard:
                 return True
         return False
 
-    def run(self, map_data: Map):
-        while True:
-            object_ahead = my_guard.see_ahead(map_data)
+    def move(self, map_data: Map):
+        # check if an obstacle is ahead
+        object_ahead = my_guard.see_ahead(map_data)
 
+        if object_ahead == '#' or object_ahead == 'O':
+            my_guard.rotate_cw(my_map)
+
+            # and check if another one is in the way
+            object_ahead = my_guard.see_ahead(map_data)
             if object_ahead == '#' or object_ahead == 'O':
                 my_guard.rotate_cw(my_map)
-            else:
-                my_guard.move(my_map)
+
+        my_guard.step(my_map)
+
+    def run(self, map_data: Map):
+        while True:
 
             if my_guard.running_in_circles(my_map):
-                print("running in circles")
                 return 'circle'
 
+            self.move(map_data)
+
+            object_ahead = my_guard.see_ahead(map_data)
             if object_ahead == 'E':
                 return 'exit'
 
 
 if __name__ == "__main__":
-    # map_data = get_input_data("test_input.txt")
-
     obstacles = 0
-    skip_steps = 0
+    skip_moves = 0
 
-    while True:
+    loop_limiter = 2000
+
+    while loop_limiter > 0:
+        # loop_limiter -= 1
+
         my_map = Map(get_input_data("test_input.txt"))
         # my_map = Map(get_input_data())
 
         starting_position = my_map.get_starting_position()
         my_guard = Guard(starting_position, Direction.NORTH)
 
-        # my_map.put_at('O', Position(3, 6))  # force a circle
-        # print(my_map)
-
         # moving forward without placing an obstacle
-        for i in range(skip_steps):
-
-            object_ahead = my_map.get_at(my_guard.pos.step(my_guard.heading))
-            if object_ahead == '#' or object_ahead == 'O':
-                my_guard.rotate_cw(my_map)
+        for i in range(skip_moves):
             my_guard.move(my_map)
 
         # end if guard made it to an exit
         if my_map.get_at(my_guard.pos.step(my_guard.heading)) == 'E':
             print('exit found')
             break
+
         # palce an obstacle at the next position
-        my_map.put_at('O', my_guard.pos.step(my_guard.heading))
+        obstacle_position = my_guard.pos.step(my_guard.heading)
+
+        # reset map
+        my_map = Map(get_input_data("test_input.txt"))
+        starting_position = my_map.get_starting_position()
+        my_guard = Guard(starting_position, Direction.NORTH)
+
+        # place obstacle
+        my_map.put_at('O', obstacle_position)
 
         if my_guard.run(my_map) == 'circle':
             obstacles += 1
+            loop_limiter -= 1
+
             print("================")
-            print(f"option {obstacles}")
+            print(f"Option {obstacles} Position: {obstacle_position}")
+            print("================")
             print(my_map)
-            print("================")
 
-        skip_steps += 1
+            # print(f"option {obstacles} Position: {obstacle_position}")
 
-    print(f"steps skipped {skip_steps}")
+        skip_moves += 1
+
+    print(f"steps skipped {skip_moves}")
     print(f"obstacles: {obstacles}")
