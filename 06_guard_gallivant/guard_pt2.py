@@ -1,5 +1,5 @@
 from enum import Enum
-import os
+import copy
 
 
 def get_input_data(filename="input.txt"):
@@ -42,10 +42,17 @@ class Position:
     def copy(self):
         return Position(self.x, self.y)
 
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            if self.x == other.x and self.y == other.y:
+                return True
+        return False
+
 
 class Map:
     def __init__(self, map_data: list):
-        self.data = map_data.copy()
+        self.data = copy.deepcopy(map_data)
+        self.starting_position = self.get_starting_position()
 
     def get_at(self, pos: Position):
         if pos.y >= 0 and pos.y < len(self.data):
@@ -74,6 +81,14 @@ class Map:
                     counter += 1
         return counter
 
+    def get_trail_locations(self) -> list:
+        locations = []
+        for y, l in enumerate(self.data):
+            for x, object in enumerate(l):
+                if object == Direction.NORTH.value[2] or object == Direction.EAST.value[2] or object == '+':
+                    locations.append(Position(x, y))
+        return locations
+
     def __str__(self):
         out = ""
         for y, l in enumerate(self.data):
@@ -91,7 +106,10 @@ class Guard:
         self.heading = heading
 
     def step(self, map_data: Map):
+        self.draw_trail(map_data)
+        self.pos = self.pos.step(self.heading)
 
+    def draw_trail(self, map_data: Map):
         object_current_location = map_data.get_at(self.pos)
 
         if self.heading == Direction.NORTH or self.heading == Direction.SOUTH:
@@ -105,8 +123,6 @@ class Guard:
                 map_data.put_at(Direction.WEST.value[2], self.pos)
             elif object_current_location == Direction.NORTH.value[2]:
                 map_data.put_at('+', self.pos)
-
-        self.pos = self.pos.step(self.heading)
 
     def see_ahead(self, map_data: Map):
         return map_data.get_at(self.pos.step(self.heading))
@@ -124,78 +140,67 @@ class Guard:
 
     def move(self, map_data: Map):
         # check if an obstacle is ahead
-        object_ahead = my_guard.see_ahead(map_data)
+        object_ahead = self.see_ahead(map_data)
 
         if object_ahead == '#' or object_ahead == 'O':
-            my_guard.rotate_cw(my_map)
+            self.rotate_cw(map_data)
 
             # and check if another one is in the way
-            object_ahead = my_guard.see_ahead(map_data)
+            object_ahead = self.see_ahead(map_data)
             if object_ahead == '#' or object_ahead == 'O':
-                my_guard.rotate_cw(my_map)
+                self.rotate_cw(map_data)
 
-        my_guard.step(my_map)
+        self.step(map_data)
 
     def run(self, map_data: Map):
         while True:
 
-            if my_guard.running_in_circles(my_map):
+            if self.running_in_circles(map_data):
                 return 'circle'
 
             self.move(map_data)
+            object_ahead = self.see_ahead(map_data)
 
-            object_ahead = my_guard.see_ahead(map_data)
             if object_ahead == 'E':
+                self.draw_trail(map_data)
                 return 'exit'
 
 
 if __name__ == "__main__":
     obstacles = 0
-    skip_moves = 0
+    potential_locations = []
 
-    loop_limiter = 2000
+    # setup initial run
+    # input_data = get_input_data("test_input.txt")
+    input_data = get_input_data()
 
-    while loop_limiter > 0:
-        # loop_limiter -= 1
+    my_map = Map(input_data)
+    my_guard = Guard(my_map.starting_position, Direction.NORTH)
 
-        my_map = Map(get_input_data("test_input.txt"))
-        # my_map = Map(get_input_data())
+    # initial run
+    my_guard.run(my_map)
 
-        starting_position = my_map.get_starting_position()
-        my_guard = Guard(starting_position, Direction.NORTH)
+    # show trailed map
+    print(my_map)
 
-        # moving forward without placing an obstacle
-        for i in range(skip_moves):
-            my_guard.move(my_map)
+    # get trail locations
+    potential_locations = my_map.get_trail_locations()
+    # remove starting position
+    potential_locations = list(
+        filter(lambda x: x != my_map.starting_position, potential_locations))
 
-        # end if guard made it to an exit
-        if my_map.get_at(my_guard.pos.step(my_guard.heading)) == 'E':
-            print('exit found')
-            break
-
-        # palce an obstacle at the next position
-        obstacle_position = my_guard.pos.step(my_guard.heading)
-
-        # reset map
-        my_map = Map(get_input_data("test_input.txt"))
-        starting_position = my_map.get_starting_position()
-        my_guard = Guard(starting_position, Direction.NORTH)
+    # place an obstacle at each potential location
+    for p in potential_locations:
+        # reset map & guard
+        my_map = Map(input_data)
+        my_guard = Guard(my_map.starting_position, Direction.NORTH)
 
         # place obstacle
-        my_map.put_at('O', obstacle_position)
+        my_map.put_at('O', p)
 
+        # check if obstruction resultet in circle
         if my_guard.run(my_map) == 'circle':
             obstacles += 1
-            loop_limiter -= 1
+            print(f"loops found: {obstacles}")
 
-            print("================")
-            print(f"Option {obstacles} Position: {obstacle_position}")
-            print("================")
-            print(my_map)
-
-            # print(f"option {obstacles} Position: {obstacle_position}")
-
-        skip_moves += 1
-
-    print(f"steps skipped {skip_moves}")
-    print(f"obstacles: {obstacles}")
+    print(f"Total possible obstacles: {obstacles}")
