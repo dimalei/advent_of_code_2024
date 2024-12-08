@@ -38,7 +38,7 @@ class Position:
 
     def __str__(self):
         return f"x: {self.x}, y: {self.y}"
-    
+
     def copy(self):
         return Position(self.x, self.y)
 
@@ -62,8 +62,8 @@ class Map:
     def get_starting_position(self) -> Position:
         for y, line in enumerate(self.data):
             if "^" in line:
-                starting_position = Position(line.index("^"),y)
-                self.put_at('.' ,starting_position)
+                starting_position = Position(line.index("^"), y)
+                self.put_at('.', starting_position)
                 return starting_position
 
     def count_objects(self, object: str):
@@ -73,20 +73,6 @@ class Map:
                 if object == row:
                     counter += 1
         return counter
-    
-    def is_obstacle_opporunity(self, pos: Position , heading : Direction) -> bool:
-        """checks if the block would be a suitable obstacle location"""
-        hypoteical_pos = pos.copy()
-        next_heading = heading.rotate_cw()
-        has_potential = False
-        while True:
-            location_ahead = pos.step(next_heading)
-            if location_ahead == '#' or location_ahead == 'O':
-                has_potential = True
-                break
-            if location_ahead == 'E':
-                return False
-        
 
     def __str__(self):
         out = ""
@@ -104,15 +90,19 @@ class Guard:
 
     def move(self, map_data: Map):
 
+        object_current_location = map_data.get_at(self.pos)
+
         if self.heading == Direction.NORTH or self.heading == Direction.SOUTH:
-            if map_data.get_at(self.pos) == '.':
-                map_data.put_at('|', self.pos)
-            else: map_data.put_at('+', self.pos)
+            if object_current_location == '.':
+                map_data.put_at(Direction.NORTH.value[2], self.pos)
+            elif object_current_location == Direction.EAST.value[2]:
+                map_data.put_at("+", self.pos)
 
         if self.heading == Direction.WEST or self.heading == Direction.EAST:
-            if map_data.get_at(self.pos) == '.':
-                map_data.put_at('-', self.pos)
-            else: map_data.put_at('+', self.pos)
+            if object_current_location == '.':
+                map_data.put_at(Direction.WEST.value[2], self.pos)
+            elif object_current_location == Direction.NORTH.value[2]:
+                map_data.put_at('+', self.pos)
 
         self.pos = self.pos.step(self.heading)
 
@@ -124,49 +114,68 @@ class Guard:
         self.heading = self.heading.rotate_cw()
 
     def running_in_circles(self, map_data: Map) -> bool:
-        object_ahead = self.see_ahead(map_data)
-        print(object_ahead)
-        trail = self.heading.value[2]
-        if object_ahead == trail or object_ahead == '+':
-            return True
+        if map_data.get_at(self.pos) == '+':
+            object_ahead = self.see_ahead(map_data)
+            if object_ahead == '#' or object_ahead == 'O':
+                return True
         return False
+
+    def run(self, map_data: Map):
+        while True:
+            object_ahead = my_guard.see_ahead(map_data)
+
+            if object_ahead == '#' or object_ahead == 'O':
+                my_guard.rotate_cw(my_map)
+            else:
+                my_guard.move(my_map)
+
+            if my_guard.running_in_circles(my_map):
+                print("running in circles")
+                return 'circle'
+
+            if object_ahead == 'E':
+                return 'exit'
 
 
 if __name__ == "__main__":
-    my_map = Map(get_input_data("test_input.txt"))
-    # my_map = Map(get_input_data())
-    starting_position = my_map.get_starting_position()
-    my_guard = Guard(starting_position, Direction.NORTH)
-
-    i = 100
-
-    # print(Direction.rotate_cw(Direction.SOUTH))
-    # print(my_map.get_at(Position(0,4)))
-    # print(my_map.data[0][4])
-
-    my_map.put_at('O',Position(7,9))
+    # map_data = get_input_data("test_input.txt")
 
     obstacles = 0
+    skip_steps = 0
 
-    while i > 0:
-        # i -= 1
-        # os.system('cls' if os.name == 'nt' else 'clear')
+    while True:
+        my_map = Map(get_input_data("test_input.txt"))
+        # my_map = Map(get_input_data())
+
+        starting_position = my_map.get_starting_position()
+        my_guard = Guard(starting_position, Direction.NORTH)
+
+        # my_map.put_at('O', Position(3, 6))  # force a circle
         # print(my_map)
 
-        object_ahead = my_guard.see_ahead(my_map)
+        # moving forward without placing an obstacle
+        for i in range(skip_steps):
 
-        # print(object_ahead)
-        if object_ahead == '#' or object_ahead == 'O':
-            my_guard.rotate_cw(my_map)
-        else:
+            object_ahead = my_map.get_at(my_guard.pos.step(my_guard.heading))
+            if object_ahead == '#' or object_ahead == 'O':
+                my_guard.rotate_cw(my_map)
             my_guard.move(my_map)
 
-        if my_guard.running_in_circles(my_map):
-            print("running in circles")
-            break
-
-        if object_ahead == 'E':
+        # end if guard made it to an exit
+        if my_map.get_at(my_guard.pos.step(my_guard.heading)) == 'E':
             print('exit found')
             break
+        # palce an obstacle at the next position
+        my_map.put_at('O', my_guard.pos.step(my_guard.heading))
 
-    print(my_map)
+        if my_guard.run(my_map) == 'circle':
+            obstacles += 1
+            print("================")
+            print(f"option {obstacles}")
+            print(my_map)
+            print("================")
+
+        skip_steps += 1
+
+    print(f"steps skipped {skip_steps}")
+    print(f"obstacles: {obstacles}")
