@@ -1,4 +1,5 @@
 from itertools import product
+import time
 
 
 def get_input_data(filename="input.txt"):
@@ -34,6 +35,9 @@ def check_calibration_truth(calibration: tuple, elements: list) -> bool:
                 result *= (10 ** len(str(operands[index + 1])))
                 result += operands[index + 1]
 
+            if (result > calibration_result):
+                break
+
         if (calibration_result == result):
             return True
 
@@ -48,7 +52,7 @@ def sum_of_calibrations(input_data: list, operators: list) -> int:
 
         print(f"checked {i:03} out of {
               len(input_data)} calibrations. Total Sum {sum}")
-        
+
     return sum
 
 
@@ -56,5 +60,11 @@ if __name__ == "__main__":
     # input_data = get_input_data("test_input.txt")
     input_data = get_input_data()
 
+    start = time.time()
     # print(f"Part 1: sum of all true calibrations: {sum_of_calibrations(input_data, ['+', '*'])}")
     print(f"Part 2: sum of all true calibrations with concat: {sum_of_calibrations(input_data, ['+', '*', 'c'])}")
+    passed = time.time() - start
+    print(f"Time passed: {passed:.3f} s")
+
+    # old time 14.580 s
+    # new time 13.960 s
