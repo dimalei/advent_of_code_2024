@@ -17,16 +17,10 @@ def get_input_data(filename="input.txt"):
 
 def check_calibration_truth(calibration: tuple, elements: list) -> bool:
 
-    print(f"checking calibration: {calibration}")
-
     calibration_result = calibration[0]
     operands = calibration[1]
 
     comb = product(elements, repeat=len(operands)-1)
-
-    # print(list(comb))
-
-    # return False
 
     for combination in comb:
         result = operands[0]
@@ -36,23 +30,31 @@ def check_calibration_truth(calibration: tuple, elements: list) -> bool:
                 result += operands[index + 1]
             elif (operator == '*'):
                 result *= operands[index + 1]
+            elif (operator == 'c'):
+                result *= (10 ** len(str(operands[index + 1])))
+                result += operands[index + 1]
 
         if (calibration_result == result):
-            print(f"solution for this calibration: {calibration}:")
-            print(combination)
             return True
 
-    print(f"solution cant be solved: {calibration}:")
     return False
+
+
+def sum_of_calibrations(input_data: list, operators: list) -> int:
+    sum = 0
+    for i, calibration in enumerate(input_data):
+        if check_calibration_truth(calibration, operators):
+            sum += calibration[0]
+
+        print(f"checked {i:03} out of {
+              len(input_data)} calibrations. Total Sum {sum}")
+        
+    return sum
 
 
 if __name__ == "__main__":
     # input_data = get_input_data("test_input.txt")
     input_data = get_input_data()
 
-    sum = 0
-    for calibration in input_data:
-        if check_calibration_truth(calibration, ['+', '*']):
-            sum += calibration[0]
-
-    print(f"sum of all true calibrations: {sum}")
+    # print(f"Part 1: sum of all true calibrations: {sum_of_calibrations(input_data, ['+', '*'])}")
+    print(f"Part 2: sum of all true calibrations with concat: {sum_of_calibrations(input_data, ['+', '*', 'c'])}")
