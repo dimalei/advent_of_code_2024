@@ -48,6 +48,10 @@ def get_resonace_loactions(max_x: int, max_y: int, antenna1: tuple, antenna2: tu
             break
         resonances.add((r_x, r_y))
         n += 1
+    
+    #adding the antennas themselves
+    resonances.add(antenna1)
+    resonances.add(antenna2)
 
     return resonances
 
@@ -70,8 +74,8 @@ def print_map(map_data: list, resonance_locations=set()):
 
 
 if __name__ == "__main__":
-    input_data = get_input_data("test_input.txt")
-    # input_data = get_input_data()
+    # input_data = get_input_data("test_input2.txt")
+    input_data = get_input_data()
 
     antenna_locations = get_antennas(input_data)
     all_resonance_locations = set()
@@ -85,7 +89,7 @@ if __name__ == "__main__":
                 antenna1 = antenna_list[i]
                 antenna2 = antenna_list[j]
                 resonances = get_resonace_loactions(
-                    len(input_data[0]), len(input_data), antenna1, antenna2)
+                    len(input_data[0])-1, len(input_data)-1, antenna1, antenna2)
 
                 all_resonance_locations = all_resonance_locations.union(
                     resonances)
