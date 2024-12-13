@@ -72,10 +72,10 @@ def find_free_space(file: list, disk: list):
     return -1
 
 
-def delete_file(file_id: int, disk: list):
-    for i in range(len(disk)):
-        if disk[i] == file_id:
-            disk[i] = '.'
+def delete_file(file: int, disk: list):
+    file_index = disk.index(file[0])
+    for j in range(len(file)):
+        disk[file_index + j] = '.'
 
 
 def insert_file(file: list, index: int, disk: list):
@@ -94,7 +94,7 @@ def defragment(disk: list):
         free_index = find_free_space(file, disk)
 
         if free_index != -1:
-            delete_file(file_id, disk)
+            delete_file(file, disk)
             insert_file(file, free_index,  disk)
         file_id -= 1
 
