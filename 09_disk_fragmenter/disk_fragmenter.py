@@ -33,9 +33,8 @@ def fragment(disk: list):
 def checksum(disk: list):
     out = 0
     for i, f in enumerate(disk):
-        if f == '.':
-            continue
-        out += i * f
+        if f != '.':
+            out += i * f
     return out
 
 
