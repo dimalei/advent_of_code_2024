@@ -58,14 +58,16 @@ class Waypoint:
         if new_x < len(map[self.y]) and map[self.y][new_x] - 1 == self.val:
             next.append(
                 Waypoint(new_x, self.y, map[self.y][new_x]))
-        
+
         return next
 
-    def build_path(self, map: list):
-        next_wps = self.find_next(map)
-        self.next_waypoints.extend(next_wps)
+    def build_path(self, trailhead: 'Waypoint', map: list):
+        found_wps = self.find_next(map)
+        for wp in found_wps:
+            if not trailhead.contains(wp):
+                self.next_waypoints.append(wp)
         for wp in self.next_waypoints:
-            wp.build_path(map)
+            wp.build_path(trailhead, map)
 
     def string_tree(self) -> str:
         out = ""
@@ -97,7 +99,7 @@ if __name__ == "__main__":
                 highpoints.append(Waypoint(x, y, val))
 
     for th in trailheads:
-        th.build_path(data)
+        th.build_path(th, data)
 
     for hp in highpoints:
         for i, th in enumerate(trailheads):
@@ -107,7 +109,7 @@ if __name__ == "__main__":
     print(trailheads_points)
     print(sum(trailheads_points))
 
-    # print(trailheads[1].string_tree())
+    print(trailheads[1].string_tree())
 
     # wp0 = Waypoint(0, 0, 0)
     # wp1 = Waypoint(1, 2, 1)
