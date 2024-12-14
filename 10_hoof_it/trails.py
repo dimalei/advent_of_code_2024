@@ -69,6 +69,12 @@ class Waypoint:
         for wp in self.next_waypoints:
             wp.build_path(trailhead, map)
 
+    def build_every_path(self, map: list):
+        found_wps = self.find_next(map)
+        self.next_waypoints.extend(found_wps)
+        for wp in self.next_waypoints:
+            wp.build_every_path(map)
+
     def string_tree(self) -> str:
         out = ""
         out += self.__str__()
@@ -78,54 +84,52 @@ class Waypoint:
             out += wp.string_tree()
         return out
 
+    def distinct_paths_to(self, goal: int) -> int:
+        paths = 0
+        for wp in self.next_waypoints:
+            paths += wp.distinct_paths_to(goal)
+        if self.val == goal:
+            return 1
+        return paths
+
 
 if __name__ == "__main__":
     # data = get_input()
     data = get_input("input.txt")
 
     trailheads = []
-    trailheads_points = []
+    trailheads_highpoints = []
+    trailheads_distinct_paths = []
     highpoints = []
 
     for y, line in enumerate(data):
         for x, val in enumerate(line):
             if val == 0:
                 trailheads.append(Waypoint(x, y, val))
-                trailheads_points.append(0)
+                trailheads_highpoints.append(0)
 
     for y, line in enumerate(data):
         for x, val in enumerate(line):
             if val == 9:
                 highpoints.append(Waypoint(x, y, val))
 
+    # part 1:
+    # for th in trailheads:
+    #     th.build_path(th, data)
+
+    # for hp in highpoints:
+    #     for i, th in enumerate(trailheads):
+    #         if th.contains(hp):
+    #             trailheads_highpoints[i] += 1
+
+    # print(trailheads_highpoints)
+    # print(sum(trailheads_highpoints))
+
+    # part 2:
     for th in trailheads:
-        th.build_path(th, data)
+        th.build_every_path(data)
 
-    for hp in highpoints:
-        for i, th in enumerate(trailheads):
-            if th.contains(hp):
-                trailheads_points[i] += 1
+    for i, th in enumerate(trailheads):
+        trailheads_distinct_paths.append(th.distinct_paths_to(9))
 
-    print(trailheads_points)
-    print(sum(trailheads_points))
-
-    print(trailheads[1].string_tree())
-
-    # wp0 = Waypoint(0, 0, 0)
-    # wp1 = Waypoint(1, 2, 1)
-    # wp2 = Waypoint(3, 4, 2)
-    # wp3 = Waypoint(4, 5, 3)
-    # wp4 = Waypoint(6, 7, 4)
-    # wp5 = Waypoint(8, 10, 5)
-    # wp6 = Waypoint(11, 12, 6)
-
-    # wp4.add_next(wp5)
-    # wp2.add_next(wp3)
-    # wp2.add_next(wp4)
-    # wp2.add_next(wp6)
-    # wp1.add_next(wp2)
-    # wp0.add_next(wp1)
-
-    # print(wp0.string_tree())
-
-    # print(wp1.contains(Waypoint(11, 10, 5)))
+    print(sum(trailheads_distinct_paths))
