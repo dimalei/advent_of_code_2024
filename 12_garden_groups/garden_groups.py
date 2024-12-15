@@ -1,7 +1,7 @@
 import copy
 
 
-def get_input(file_name="12_garden_groups/test_input.txt"):
+def get_input(file_name="test_input.txt"):
     with open(file_name, "r") as f:
         out = []
         for row in f:
@@ -29,14 +29,23 @@ class Plot:
         return hash((self.x, self.y))
 
 
+class Perimeter(Plot):
+    def __init__(self, x, y, label: str):
+        super().__init__(x, y)
+        self.label = label
+
+    def __repr__(self):
+        return f"Perimeter({self.x},{self.y},{self.label})"
+
+
 class Region:
     def __init__(self, label, initial_plot: Plot, map: list):
         self.label = label
         self.plots = []
-        self.perimeter = []
+        self.perimeters = []
         self.plots.append(initial_plot)
         self.grow_region(map)
-        self.build_perimeter()
+        self.build_perimeters()
 
     def add_plot(self, plot: Plot):
         self.plots.append(plot)
@@ -73,16 +82,16 @@ class Region:
 
         return adjacent
 
-    def get_perimeter(self, plot: Plot):
+    def get_perimeters(self, plot: Plot):
         adjacent = []
         # north
-        adjacent.append(Plot(plot.x, plot.y - 1))
+        adjacent.append(Perimeter(plot.x, plot.y - 1, "-"))
         # east
-        adjacent.append(Plot(plot.x - 1, plot.y))
+        adjacent.append(Perimeter(plot.x - 1, plot.y, "|"))
         # south
-        adjacent.append(Plot(plot.x, plot.y + 1))
+        adjacent.append(Perimeter(plot.x, plot.y + 1, "-"))
         # west
-        adjacent.append(Plot(plot.x + 1, plot.y))
+        adjacent.append(Perimeter(plot.x + 1, plot.y, "|"))
 
         to_remove = []
         for p in adjacent:
@@ -94,12 +103,55 @@ class Region:
 
         return adjacent
 
-    def build_perimeter(self):
+    def build_perimeters(self):
         for p in self.plots:
-            self.perimeter.extend(self.get_perimeter(p))
+            self.perimeters.extend(self.get_perimeters(p))
+
+    def get_sides(self):
+        perimeters_copy = copy.deepcopy(self.perimeters)
+        sides = []
+        while len(perimeters_copy) > 0:
+            side = [perimeters_copy[0]]
+            perimeters_copy.remove(perimeters_copy[0])
+            self.grow_side(side, perimeters_copy)
+            sides.append(side)
+
+        return len(sides)
+
+    def grow_side(self, side: list, permieters_list: list):
+        while True:
+            next = self.get_next_perimeter(side[-1], permieters_list)
+            prev = self.get_prev_perimeter(side[0], permieters_list)
+            if not next is None:
+                side.append(next)
+                permieters_list.remove(next)
+            if not prev is None:
+                side.insert(0, prev)
+                permieters_list.remove(prev)
+            if next is None and prev is None:
+                break
+
+    def get_next_perimeter(self, sp: Perimeter, permieters_list: list):
+        for p in permieters_list:
+            if sp.label == "-" and p.label == "-" and sp.y == p.y and p.x-1 == sp.x:
+                return p
+            elif sp.label == "|" and p.label == "|" and sp.x == p.x and p.y-1 == sp.y:
+                return p
+        return None
+
+    def get_prev_perimeter(self, sp: Perimeter, permieters_list: list):
+        for p in permieters_list:
+            if sp.label == "-" and p.label == "-" and sp.y == p.y and p.x+1 == sp.x:
+                return p
+            elif sp.label == "|" and p.label == "|" and sp.x == p.x and p.y+1 == sp.y:
+                return p
+        return None
 
     def get_price(self):
-        return len(self.plots) * len(self.perimeter)
+        return len(self.plots) * len(self.perimeters)
+
+    def get_discount_price(self):
+        return len(self.plots) * self.get_sides()
 
     def __str__(self):
         max_x = 0
@@ -108,7 +160,7 @@ class Region:
         min_y = self.plots[0].y
 
         out = ""
-        for p in self.plots + self.perimeter:
+        for p in self.plots + self.perimeters:
             if p.x > max_x:
                 max_x = p.x
             if p.y > max_y:
@@ -123,8 +175,9 @@ class Region:
             for x in range(min_x, max_x+1):
                 if Plot(x, y) in self.plots:
                     out += self.label
-                elif Plot(x, y) in self.perimeter:
-                    out += "#"
+                elif Plot(x, y) in self.perimeters:
+                    index = self.perimeters.index(Plot(x, y))
+                    out += self.perimeters[index].label
                 else:
                     out += "."
             out += "\n"
@@ -150,14 +203,15 @@ def get_regions(map: list):
 
 
 if __name__ == "__main__":
-    input = get_input("12_garden_groups/input.txt")
+    input = get_input("input.txt")
     # input = get_input()
 
     regions = get_regions(input)
 
-    index = 0
+    index = 8
 
     print(f"region0: \n{regions[index]}plots: {
-          len(regions[index].plots)} perimeters: {len(regions[index].perimeter)} cost: {regions[index].get_price()}")
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {regions[index].get_sides()} discount price: {regions[index].get_discount_price()}")
 
-    print(sum([r.get_price() for r in regions]))
+    print(f"full price: {sum([r.get_price() for r in regions])}")
+    print(f"discount price: {sum([r.get_discount_price() for r in regions])}")
