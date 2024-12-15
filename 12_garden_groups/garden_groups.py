@@ -24,16 +24,19 @@ class Plot:
 
     def __repr__(self):
         return f"Plot({self.x},{self.y})"
-    
+
     def __hash__(self):
         return hash((self.x, self.y))
 
 
 class Region:
-    def __init__(self, label, initial_plot: Plot):
+    def __init__(self, label, initial_plot: Plot, map: list):
         self.label = label
         self.plots = []
+        self.perimeter = []
         self.plots.append(initial_plot)
+        self.grow_region(map)
+        self.build_perimeter()
 
     def add_plot(self, plot: Plot):
         self.plots.append(plot)
@@ -81,20 +84,22 @@ class Region:
         # west
         adjacent.append(Plot(plot.x + 1, plot.y))
 
+        to_remove = []
         for p in adjacent:
             if p in self.plots:
-                self.plots.remove(p)
+                to_remove.append(p)
+
+        for p in to_remove:
+            adjacent.remove(p)
 
         return adjacent
 
-    def get_area(self):
-        return len(self.plots)
-
-    def get_perimeter_length(self):
-        perimeter = set()
+    def build_perimeter(self):
         for p in self.plots:
-            perimeter.union(set(self.get_perimeter(p)))
-        return len(perimeter)
+            self.perimeter.extend(self.get_perimeter(p))
+
+    def get_price(self):
+        return len(self.plots) * len(self.perimeter)
 
     def __str__(self):
         max_x = 0
@@ -103,11 +108,12 @@ class Region:
         min_y = self.plots[0].y
 
         out = ""
-        for p in self.plots:
+        for p in self.plots + self.perimeter:
             if p.x > max_x:
                 max_x = p.x
             if p.y > max_y:
                 max_y = p.y
+
             if p.x < min_x:
                 min_x = p.x
             if p.y < min_y:
@@ -117,6 +123,8 @@ class Region:
             for x in range(min_x, max_x+1):
                 if Plot(x, y) in self.plots:
                     out += self.label
+                elif Plot(x, y) in self.perimeter:
+                    out += "#"
                 else:
                     out += "."
             out += "\n"
@@ -126,8 +134,7 @@ class Region:
 
 def create_region(x, y, map: list):
     label = map[y][x]
-    r = Region(label, Plot(x, y))
-    r.grow_region(map)
+    r = Region(label, Plot(x, y), map)
     return r
 
 
@@ -143,27 +150,14 @@ def get_regions(map: list):
 
 
 if __name__ == "__main__":
-    # input = get_input("12_garden_groups/input.txt")
-    input = get_input()
+    input = get_input("12_garden_groups/input.txt")
+    # input = get_input()
 
     regions = get_regions(input)
-    # r1 = create_region(2, 2, input)
-    # r1 = Region("R", Plot(0,0))
-    # r1.add_plot(Plot(1,0))
-    # r1.add_plot(Plot(2,0))
-    # r1.add_plot(Plot(3,0))
-    # r1.add_plot(Plot(1,1))
-    # r1.add_plot(Plot(2,1))
-    # r1.add_plot(Plot(3,1))
-    # print(r1)
 
-    for row in input:
-        print(row)
+    index = 0
 
-    print(regions[0].plots)
+    print(f"region0: \n{regions[index]}plots: {
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeter)} cost: {regions[index].get_price()}")
 
-    print(f"region: {regions[0].label} area: {
-          regions[0].get_area()} perimeter: {regions[0].get_perimeter_length()}")
-    print(regions[0])
-
-    # print(regions[0])
+    print(sum([r.get_price() for r in regions]))
