@@ -31,6 +31,9 @@ class Perimeter(Plot):
     def __repr__(self):
         return f"Perimeter({self.x},{self.y},{self.label})"
 
+    def increment_label(self):
+        self.label = str(int(self.label) + 1)
+
 
 class Region:
     def __init__(self, label, initial_plot: Plot, map: list):
@@ -38,10 +41,12 @@ class Region:
         self.plots = []
         self.perimeters = []
         self.sides = []
+        self.corners = []
         self.plots.append(initial_plot)
         self.build_region(map)
         self.build_perimeters()
         self.build_sides()
+        self.build_corners()
 
     def add_plot(self, plot: Plot):
         self.plots.append(plot)
@@ -141,48 +146,65 @@ class Region:
                 return p
         return None
 
-    def count_corners(self):
+    def build_corners(self):
         corners = 0
+        corners_nodes = []
         for p in self.plots:
             # nw corner
             if not Plot(p.x-1, p.y-1) in self.plots:
                 # convex
                 if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x-1, p.y) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x-1, p.y-1))
                 # concave
                 if Plot(p.x, p.y-1) in self.plots and Plot(p.x-1, p.y) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x-1, p.y-1))
             # sw corner
             if not Plot(p.x-1, p.y+1) in self.plots:
                 # convex
                 if not Plot(p.x-1, p.y) in self.plots and not Plot(p.x, p.y+1) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x-1, p.y+1))
                 # concave
                 if Plot(p.x-1, p.y) in self.plots and Plot(p.x, p.y+1) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x-1, p.y+1))
             # se corner
             if not Plot(p.x+1, p.y+1) in self.plots:
                 # convex
                 if not Plot(p.x, p.y+1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x+1, p.y+1))
                 # concave
                 if Plot(p.x, p.y+1) in self.plots and Plot(p.x+1, p.y) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x+1, p.y+1))
             # ne corner
             if not Plot(p.x+1, p.y-1) in self.plots:
                 # convex
                 if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
                     corners += 1
+                    corners_nodes.append(Plot(p.x+1, p.y-1))
                 # concave
                 if Plot(p.x, p.y-1) in self.plots and Plot(p.x+1, p.y) in self.plots:
                     corners += 1
-        return corners
+                    corners_nodes.append(Plot(p.x+1, p.y-1))
+
+        for cn in corners_nodes:
+            if cn in self.corners:
+                self.corners[self.corners.index(cn)].increment_label()
+            else:
+                self.corners.append(Perimeter(cn.x, cn.y, "1"))
+
+    def get_corners(self):
+        return sum([int(c.label) for c in self.corners])
 
     def get_price(self):
         return len(self.plots) * len(self.perimeters)
 
     def get_discount_price(self):
-        return len(self.plots) * self.count_corners()
+        return len(self.plots) * self.get_corners()
 
     def __str__(self):
         max_x = 0
@@ -206,6 +228,9 @@ class Region:
             for x in range(min_x, max_x+1):
                 if Plot(x, y) in self.plots:
                     out += "\033[92m" + self.label
+                elif Plot(x, y) in self.corners:
+                    index = self.corners.index(Plot(x, y))
+                    out += "\033[96m" + ("+" if self.corners[index].label == "1" else "#")
                 elif Plot(x, y) in self.perimeters:
                     index = self.perimeters.index(Plot(x, y))
                     out += "\033[96m" + self.perimeters[index].label
@@ -241,11 +266,11 @@ if __name__ == "__main__":
 
     regions = get_regions(input)
 
-    index = 2
+    index = 3
 
-    print(f"regioins: {len(regions)}")
-    print(f"region0: \n{regions[index]}plots: {
-          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()} corners: {regions[index].count_corners()}")
+    print(f"regions: {len(regions)}")
+    print(f"region {index}: \n{regions[index]}plots: {
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()} corners: {regions[index].get_corners()}")
 
     # for i, side in enumerate(regions[index].sides):
     #     print(f"side {i}: {side}")
