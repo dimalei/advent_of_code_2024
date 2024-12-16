@@ -230,7 +230,7 @@ class Region:
                     out += "\033[92m" + self.label
                 elif Plot(x, y) in self.corners:
                     index = self.corners.index(Plot(x, y))
-                    out += "\033[96m" + ("+" if self.corners[index].label == "1" else "#")
+                    out += "\033[96m" + self.corners[index].label
                 elif Plot(x, y) in self.perimeters:
                     index = self.perimeters.index(Plot(x, y))
                     out += "\033[96m" + self.perimeters[index].label
@@ -260,16 +260,16 @@ def get_regions(map: list):
 
 
 if __name__ == "__main__":
-    input = get_input("input.txt")
-    # input = get_input("test_input2.txt")
+    # input = get_input("input.txt")
+    input = get_input("test_input2.txt")
     # input = get_input()
 
     regions = get_regions(input)
 
-    index = 3
+    index = 0
 
     print(f"regions: {len(regions)}")
-    print(f"region {index}: \n{regions[index]}plots: {
+    print(f"region {index}: \n\033[0m{regions[index]}plots: {
           len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()} corners: {regions[index].get_corners()}")
 
     # for i, side in enumerate(regions[index].sides):
