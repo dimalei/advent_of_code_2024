@@ -40,7 +40,6 @@ class Region:
         self.label = label
         self.plots = []
         self.perimeters = []
-        self.sides = []
         self.corners = []
         self.plots.append(initial_plot)
         self.build_region(map)
@@ -235,10 +234,8 @@ if __name__ == "__main__":
 
     print(f"regions: {len(regions)}")
     print(f"region {index}: \n\033[0m{regions[index]}plots: {
-          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()} corners: {regions[index].get_corners()}")
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} discount-price: {regions[index].get_discount_price()} corners: {regions[index].get_corners()}")
 
-    # for i, side in enumerate(regions[index].sides):
-    #     print(f"side {i}: {side}")
 
     print(f"full price: {sum([r.get_price() for r in regions])}")
     print(f"discount price: {sum([r.get_discount_price() for r in regions])}")
