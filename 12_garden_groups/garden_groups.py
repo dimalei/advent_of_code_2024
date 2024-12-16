@@ -43,23 +43,25 @@ class Region:
         self.label = label
         self.plots = []
         self.perimeters = []
+        self.sides = []
         self.plots.append(initial_plot)
-        self.grow_region(map)
+        self.build_region(map)
         self.build_perimeters()
+        self.build_sides()
 
     def add_plot(self, plot: Plot):
         self.plots.append(plot)
 
-    def grow_region(self, map: list):
+    def build_region(self, map: list):
         initial_plot = [self.plots[0]]
-        self.grow_step(initial_plot, map)
+        self.grow_region(initial_plot, map)
 
-    def grow_step(self, plots: Plot, map: list):
+    def grow_region(self, plots: Plot, map: list):
         for p in plots:
             map[p.y][p.x] = "."
             next_plots = self.get_adjacents(p, map)
             self.plots.extend(next_plots)
-            self.grow_step(next_plots, map)
+            self.grow_region(next_plots, map)
 
     def get_adjacents(self, plot: Plot, map: list):
         adjacent = []
@@ -107,29 +109,27 @@ class Region:
         for p in self.plots:
             self.perimeters.extend(self.get_perimeters(p))
 
-    def get_sides(self):
+    def build_sides(self):
         perimeters_copy = copy.deepcopy(self.perimeters)
-        sides = []
         while len(perimeters_copy) > 0:
             side = [perimeters_copy[0]]
             perimeters_copy.remove(perimeters_copy[0])
             self.grow_side(side, perimeters_copy)
-            sides.append(side)
-
-        return len(sides)
+            self.sides.append(side)
 
     def grow_side(self, side: list, permieters_list: list):
         while True:
-            next = self.get_next_perimeter(side[-1], permieters_list)
             prev = self.get_prev_perimeter(side[0], permieters_list)
-            if not next is None:
-                side.append(next)
-                permieters_list.remove(next)
-            if not prev is None:
-                side.insert(0, prev)
-                permieters_list.remove(prev)
-            if next is None and prev is None:
+            if prev is None:
                 break
+            side.insert(0, prev)
+            permieters_list.remove(prev)
+        while True:
+            next = self.get_next_perimeter(side[-1], permieters_list)
+            if next is None:
+                break
+            side.append(next)
+            permieters_list.remove(next)
 
     def get_next_perimeter(self, sp: Perimeter, permieters_list: list):
         for p in permieters_list:
@@ -151,7 +151,7 @@ class Region:
         return len(self.plots) * len(self.perimeters)
 
     def get_discount_price(self):
-        return len(self.plots) * self.get_sides()
+        return len(self.plots) * len(self.sides)
 
     def __str__(self):
         max_x = 0
@@ -204,14 +204,18 @@ def get_regions(map: list):
 
 if __name__ == "__main__":
     input = get_input("input.txt")
+    # input = get_input("test_input2.txt")
     # input = get_input()
 
     regions = get_regions(input)
 
-    index = 8
+    index = 0
 
     print(f"region0: \n{regions[index]}plots: {
-          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {regions[index].get_sides()} discount price: {regions[index].get_discount_price()}")
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()}")
+
+    for i, side in enumerate(regions[index].sides):
+        print(f"side {i}: {side}")
 
     print(f"full price: {sum([r.get_price() for r in regions])}")
     print(f"discount price: {sum([r.get_discount_price() for r in regions])}")
