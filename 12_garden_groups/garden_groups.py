@@ -2,13 +2,10 @@ import copy
 
 
 def get_input(file_name="test_input.txt"):
-    with open(file_name, "r") as f:
+    with open(file_name, "r") as file:
         out = []
-        for row in f:
-            r = []
-            for val in row.strip():
-                r.append(val)
-            out.append(r)
+        for row in file:
+            out.append(list(row.strip()))
         return out
 
 
@@ -24,9 +21,6 @@ class Plot:
 
     def __repr__(self):
         return f"Plot({self.x},{self.y})"
-
-    def __hash__(self):
-        return hash((self.x, self.y))
 
 
 class Perimeter(Plot):
@@ -174,13 +168,14 @@ class Region:
         for y in range(min_y, max_y+1):
             for x in range(min_x, max_x+1):
                 if Plot(x, y) in self.plots:
-                    out += self.label
+                    out += "\033[92m" + self.label
                 elif Plot(x, y) in self.perimeters:
                     index = self.perimeters.index(Plot(x, y))
-                    out += self.perimeters[index].label
+                    out += "\033[96m" + self.perimeters[index].label
                 else:
-                    out += "."
-            out += "\n"
+                    out += "\033[0m" + "."
+                out += "  "
+            out += "\n\n"
 
         return out
 
@@ -209,13 +204,14 @@ if __name__ == "__main__":
 
     regions = get_regions(input)
 
-    index = 0
+    index = 2
 
+    print(f"regioins: {len(regions)}")
     print(f"region0: \n{regions[index]}plots: {
           len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()}")
 
-    for i, side in enumerate(regions[index].sides):
-        print(f"side {i}: {side}")
+    # for i, side in enumerate(regions[index].sides):
+    #     print(f"side {i}: {side}")
 
     print(f"full price: {sum([r.get_price() for r in regions])}")
     print(f"discount price: {sum([r.get_discount_price() for r in regions])}")
