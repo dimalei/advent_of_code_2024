@@ -141,11 +141,48 @@ class Region:
                 return p
         return None
 
+    def count_corners(self):
+        corners = 0
+        for p in self.plots:
+            # nw corner
+            if not Plot(p.x-1, p.y-1) in self.plots:
+                # convex
+                if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x-1, p.y) in self.plots:
+                    corners += 1
+                # concave
+                if Plot(p.x, p.y-1) in self.plots and Plot(p.x-1, p.y) in self.plots:
+                    corners += 1
+            # sw corner
+            if not Plot(p.x-1, p.y+1) in self.plots:
+                # convex
+                if not Plot(p.x-1, p.y) in self.plots and not Plot(p.x, p.y+1) in self.plots:
+                    corners += 1
+                # concave
+                if Plot(p.x-1, p.y) in self.plots and Plot(p.x, p.y+1) in self.plots:
+                    corners += 1
+            # se corner
+            if not Plot(p.x+1, p.y+1) in self.plots:
+                # convex
+                if not Plot(p.x, p.y+1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
+                    corners += 1
+                # concave
+                if Plot(p.x, p.y+1) in self.plots and Plot(p.x+1, p.y) in self.plots:
+                    corners += 1
+            # ne corner
+            if not Plot(p.x+1, p.y-1) in self.plots:
+                # convex
+                if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
+                    corners += 1
+                # concave
+                if Plot(p.x, p.y-1) in self.plots and Plot(p.x+1, p.y) in self.plots:
+                    corners += 1
+        return corners
+
     def get_price(self):
         return len(self.plots) * len(self.perimeters)
 
     def get_discount_price(self):
-        return len(self.plots) * len(self.sides)
+        return len(self.plots) * self.count_corners()
 
     def __str__(self):
         max_x = 0
@@ -208,7 +245,7 @@ if __name__ == "__main__":
 
     print(f"regioins: {len(regions)}")
     print(f"region0: \n{regions[index]}plots: {
-          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()}")
+          len(regions[index].plots)} perimeters: {len(regions[index].perimeters)} cost: {regions[index].get_price()} sides: {len(regions[index].sides)} discount price: {regions[index].get_discount_price()} corners: {regions[index].count_corners()}")
 
     # for i, side in enumerate(regions[index].sides):
     #     print(f"side {i}: {side}")
