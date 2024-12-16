@@ -45,7 +45,6 @@ class Region:
         self.plots.append(initial_plot)
         self.build_region(map)
         self.build_perimeters()
-        self.build_sides()
         self.build_corners()
 
     def add_plot(self, plot: Plot):
@@ -108,94 +107,56 @@ class Region:
         for p in self.plots:
             self.perimeters.extend(self.get_perimeters(p))
 
-    def build_sides(self):
-        perimeters_copy = copy.deepcopy(self.perimeters)
-        while len(perimeters_copy) > 0:
-            side = [perimeters_copy[0]]
-            perimeters_copy.remove(perimeters_copy[0])
-            self.grow_side(side, perimeters_copy)
-            self.sides.append(side)
-
-    def grow_side(self, side: list, permieters_list: list):
-        while True:
-            prev = self.get_prev_perimeter(side[0], permieters_list)
-            if prev is None:
-                break
-            side.insert(0, prev)
-            permieters_list.remove(prev)
-        while True:
-            next = self.get_next_perimeter(side[-1], permieters_list)
-            if next is None:
-                break
-            side.append(next)
-            permieters_list.remove(next)
-
-    def get_next_perimeter(self, sp: Perimeter, permieters_list: list):
-        for p in permieters_list:
-            if sp.label == "-" and p.label == "-" and sp.y == p.y and p.x-1 == sp.x:
-                return p
-            elif sp.label == "|" and p.label == "|" and sp.x == p.x and p.y-1 == sp.y:
-                return p
-        return None
-
-    def get_prev_perimeter(self, sp: Perimeter, permieters_list: list):
-        for p in permieters_list:
-            if sp.label == "-" and p.label == "-" and sp.y == p.y and p.x+1 == sp.x:
-                return p
-            elif sp.label == "|" and p.label == "|" and sp.x == p.x and p.y+1 == sp.y:
-                return p
-        return None
-
     def build_corners(self):
-        corners = 0
-        corners_nodes = []
-        for p in self.plots:
-            # nw corner
-            if not Plot(p.x-1, p.y-1) in self.plots:
-                # convex
-                if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x-1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x-1, p.y-1))
-                # concave
-                if Plot(p.x, p.y-1) in self.plots and Plot(p.x-1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x-1, p.y-1))
-            # sw corner
-            if not Plot(p.x-1, p.y+1) in self.plots:
-                # convex
-                if not Plot(p.x-1, p.y) in self.plots and not Plot(p.x, p.y+1) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x-1, p.y+1))
-                # concave
-                if Plot(p.x-1, p.y) in self.plots and Plot(p.x, p.y+1) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x-1, p.y+1))
-            # se corner
-            if not Plot(p.x+1, p.y+1) in self.plots:
-                # convex
-                if not Plot(p.x, p.y+1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x+1, p.y+1))
-                # concave
-                if Plot(p.x, p.y+1) in self.plots and Plot(p.x+1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x+1, p.y+1))
-            # ne corner
-            if not Plot(p.x+1, p.y-1) in self.plots:
-                # convex
-                if not Plot(p.x, p.y-1) in self.plots and not Plot(p.x+1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x+1, p.y-1))
-                # concave
-                if Plot(p.x, p.y-1) in self.plots and Plot(p.x+1, p.y) in self.plots:
-                    corners += 1
-                    corners_nodes.append(Plot(p.x+1, p.y-1))
+        corners = []
+        min_x, min_y, max_x, max_y = self.get_bounaries()
+        for y in range(min_y, max_y+1):
+            for x in range(min_x, max_x+1):
+                if Plot(x, y) in self.plots:
+                    continue
+                c_val = self.corner_value(x, y)
+                if c_val > 0:
+                    corners.append(Perimeter(x, y, str(c_val)))
+        self.corners = corners
 
-        for cn in corners_nodes:
-            if cn in self.corners:
-                self.corners[self.corners.index(cn)].increment_label()
-            else:
-                self.corners.append(Perimeter(cn.x, cn.y, "1"))
+    def corner_value(self, x: int, y: int):
+        sample = []
+        value = 0
+        for p_y in range(y - 1, y + 2):
+            row = []
+            for p_x in range(x - 1, x + 2):
+                row.append(Plot(p_x, p_y) in self.plots)
+            sample.append(row)
+
+        # concave corners
+        # nw
+        if sample[0][1] and sample[1][0]:
+            value += 1
+        # sw
+        if sample[2][1] and sample[1][0]:
+            value += 1
+        # se
+        if sample[2][1] and sample[1][2]:
+            value += 1
+        # ne
+        if sample[0][1] and sample[1][2]:
+            value += 1
+
+        # convex corners
+        # nw
+        if sample[0][0] and not sample[0][1] and not sample[1][0]:
+            value += 1
+        # sw
+        if sample[2][0] and not sample[1][0] and not sample[2][1]:
+            value += 1
+        # se
+        if sample[2][2] and not sample[1][2] and not sample[2][1]:
+            value += 1
+        # ne
+        if sample[0][2] and not sample[0][1] and not sample[1][2]:
+            value += 1
+
+        return value
 
     def get_corners(self):
         return sum([int(c.label) for c in self.corners])
@@ -206,13 +167,12 @@ class Region:
     def get_discount_price(self):
         return len(self.plots) * self.get_corners()
 
-    def __str__(self):
+    def get_bounaries(self):
         max_x = 0
         max_y = 0
         min_x = self.plots[0].x
         min_y = self.plots[0].y
 
-        out = ""
         for p in self.plots + self.perimeters:
             if p.x > max_x:
                 max_x = p.x
@@ -224,6 +184,11 @@ class Region:
             if p.y < min_y:
                 min_y = p.y
 
+        return (min_x, min_y, max_x, max_y)
+
+    def __str__(self):
+        min_x, min_y, max_x, max_y = self.get_bounaries()
+        out = ""
         for y in range(min_y, max_y+1):
             for x in range(min_x, max_x+1):
                 if Plot(x, y) in self.plots:
@@ -260,8 +225,8 @@ def get_regions(map: list):
 
 
 if __name__ == "__main__":
-    # input = get_input("input.txt")
-    input = get_input("test_input2.txt")
+    input = get_input("input.txt")
+    # input = get_input("test_input2.txt")
     # input = get_input()
 
     regions = get_regions(input)
