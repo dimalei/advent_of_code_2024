@@ -14,8 +14,6 @@ class Vector2:
     def __mul__(self, other: object):
         if isinstance(other, int):
             return Vector2(self.x * other, self.y * other)
-        if isinstance(other, 'Vector2'):
-            return Vector2(self.x * other.x, self.y * other.y)
         return self
 
 
