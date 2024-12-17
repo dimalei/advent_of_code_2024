@@ -1,39 +1,39 @@
-def getInputLists(filename="input.txt"):
-    l1, l2 = [], []
+def get_input_list(filename="input.txt"):
+    list_a, list_b = [], []
     with open(filename, "r") as f:
         for line in f:
-            a, b = line.strip().split("   ")
-            l1.append(int(a))
-            l2.append(int(b))
-    return (l1, l2)
+            num_a, num_b = line.strip().split("   ")
+            list_a.append(int(num_a))
+            list_b.append(int(num_b))
+    return (list_a, list_b)
 
 
-def get_distance(a: list, b: list) -> int:
-    a.sort()
-    b.sort()
+def get_distance(list_a: list, list_b: list) -> int:
+    list_a.sort()
+    list_b.sort()
     total_distance = 0
-    for i, a_n in enumerate(a):
-        distance = abs(a_n - b[i])
+    for i, num_a in enumerate(list_a):
+        distance = abs(num_a - list_b[i])
         total_distance += distance
     return total_distance
 
 
-def similarity_score(a: list, b: list) -> int:
+def similarity_score(list_a: list, list_b: list) -> int:
     score = 0
-    for id_a in a:
+    for num_a in list_a:
         appearances = 0
-        for id_b in b:
-            if (id_a == id_b):
+        for num_b in list_b:
+            if (num_a == num_b):
                 appearances += 1
-        score += id_a * appearances
+        score += num_a * appearances
     return score
 
 
 if (__name__) == "__main__":
     # test list
-    # a, b = getInputLists("test_input.txt")
+    # list_a, list_b = getInputLists("test_input.txt")
     # real list
-    a, b = getInputLists()
+    list_a, list_b = get_input_list()
 
-    print(get_distance(a, b))
-    print(similarity_score(a, b))
+    print(get_distance(list_a, list_b))
+    print(similarity_score(list_a, list_b))
