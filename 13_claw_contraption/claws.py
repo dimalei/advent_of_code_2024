@@ -40,45 +40,86 @@ class Vector2:
         return f"Vector2({self.x},{self.y})"
 
 
+class Ray2:
+    def __init__(self, start: Vector2, direction: Vector2):
+        self.s = start
+        self.d = direction
+        pass
+
+    def get_intersection(self, other: 'Ray2') -> Vector2:
+        # Compute determinant
+        det = other.d.x * self.d.y - other.d.y * self.d.x
+
+        # Check if rays are parallel (det is zero)
+        if abs(det) < 1e-10:
+            return None  # No intersection (rays are parallel)
+
+        # Solve for parameters u and v (distances along the ray directions)
+        dx = other.s.x - self.s.x
+        dy = other.s.y - self.s.y
+
+        u = (dy * other.d.x - dx * other.d.y) / det
+        v = (dy * self.d.x - dx * self.d.y) / det
+
+        # Check if intersection is "in front" of the start of both rays
+        if u >= 0 and v >= 0:
+            # Intersection point: self.s + u * self.d
+            intersection_x = self.s.x + u * self.d.x
+            intersection_y = self.s.y + u * self.d.y
+            return Vector2(intersection_x, intersection_y)
+
+        return None  # No valid intersection (lies behind one or both rays)
+
+
 class Claw_Machine:
     def __init__(self, button_a: Vector2, button_b: Vector2, prize: Vector2):
-        self.pos = Vector2(0, 0)
         self.button_a = button_a
         self.button_b = button_b
         self.prize = prize
-        self.combinations = []
         self.min_cost = 0
+        print(self)
         self.compute_min_cost()
 
     def compute_min_cost(self):
-        MAX_LENGTH = 100
-        amount_a = 0
-        amount_b = 0
+        print("next machine")
+        costAB = 0
+        costBA = 0
 
-        for i in range(MAX_LENGTH):
-            position = Vector2(0, 0)
-            amount_a = 0
-            position = self.button_b * amount_b
-            if position > self.prize:
-                break
+        intersectionAB = Ray2(Vector2(0, 0), self.button_a).get_intersection(
+            Ray2(self.prize, self.button_b * -1))
 
-            while position < self.prize:
-                amount_a += 1
-                position += self.button_a
+        
+        intersectionBA = Ray2(Vector2(0, 0), self.button_b).get_intersection(
+            Ray2(self.prize, self.button_a * -1))
 
-            if position == self.prize:
-                # viable solution
-                cost = self.get_cost(amount_a, amount_b)
-                if cost < self.min_cost or self.min_cost <= 0:
-                    self.min_cost = cost
+        if intersectionAB != None and intersectionAB.x % self.button_a.x == 0:
+            amount_a = intersectionAB.x // self.button_a.x
+            amount_b = (self.prize.x - intersectionAB.x) // self.button_b.x
 
-            amount_b += 1
+            costAB = self.get_cost(amount_a, amount_b)
+
+        if intersectionBA != None and intersectionBA.x % self.button_b.x == 0:
+            amount_b = intersectionBA.x // self.button_b.x
+            amount_a = (self.prize.x - intersectionBA.x) // self.button_a.x
+            print(f"a: {amount_a}, b: {amount_b}")
+
+            costBA = self.get_cost(amount_a, amount_b)
+        
+        print(f"costAB {costAB}")
+        print(f"costBA {costBA}")
+
+        if costAB > 0 and costAB <= costBA:
+            self.min_cost = costAB
+
+        if costBA > 0 and costBA <= costAB:
+            self.min_cost = costBA
+        
 
     def get_cost(self, amount_a: int, amount_b: int):
         return amount_a * 3 + amount_b
 
     def __str__(self):
-        return f"pos: {self.pos} prize: {self.prize} A:{self.button_a} B:{self.button_b}"
+        return f"prize: {self.prize} A:{self.button_a} B:{self.button_b}"
 
 
 def get_input(file_name="test_input.txt"):
@@ -102,9 +143,14 @@ def get_input(file_name="test_input.txt"):
 
 
 if __name__ == "__main__":
-    input = get_input()
+    # input = get_input()
     input = get_input("input.txt")
 
     for i, m in enumerate(input):
         print(f"machine {i+1:03}: {m.min_cost}")
     print(f"total sum {sum([m.min_cost for m in input])}")
+
+    # ray1 = Ray2(Vector2(0, 0), Vector2(3, 2))
+    # ray2 = Ray2(Vector2(9, 10), Vector2(-1, -2))
+
+    # print(ray1.get_intersection(ray2))
