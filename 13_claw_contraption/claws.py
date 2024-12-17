@@ -80,32 +80,32 @@ class Claw_Machine:
         self.min_cost = self.compute_min_cost()
 
     def compute_min_cost(self):
-        costAB = 0
-        costBA = 0
+        cost_AB = 0
+        cost_BA = 0
 
-        intersectionAB = Ray2(Vector2(0, 0), self.button_a).get_intersection(
+        intersection_AB = Ray2(Vector2(0, 0), self.button_a).get_intersection(
             Ray2(self.prize, self.button_b * -1))
 
-        intersectionBA = Ray2(Vector2(0, 0), self.button_b).get_intersection(
+        intersection_BA = Ray2(Vector2(0, 0), self.button_b).get_intersection(
             Ray2(self.prize, self.button_a * -1))
 
-        if intersectionAB != None and intersectionAB.x % self.button_a.x == 0:
-            amount_a = intersectionAB.x // self.button_a.x
-            amount_b = (self.prize.x - intersectionAB.x) // self.button_b.x
+        if intersection_AB != None and intersection_AB.x % self.button_a.x == 0:
+            amount_a = intersection_AB.x // self.button_a.x
+            amount_b = (self.prize.x - intersection_AB.x) // self.button_b.x
 
-            costAB = self.get_cost(amount_a, amount_b)
+            cost_AB = self.get_cost(amount_a, amount_b)
 
-        if intersectionBA != None and intersectionBA.x % self.button_b.x == 0:
-            amount_b = intersectionBA.x // self.button_b.x
-            amount_a = (self.prize.x - intersectionBA.x) // self.button_a.x
+        if intersection_BA != None and intersection_BA.x % self.button_b.x == 0:
+            amount_b = intersection_BA.x // self.button_b.x
+            amount_a = (self.prize.x - intersection_BA.x) // self.button_a.x
 
-            costBA = self.get_cost(amount_a, amount_b)
+            cost_BA = self.get_cost(amount_a, amount_b)
 
-        if costAB > 0 and costAB <= costBA:
-            return costAB
+        if cost_AB > 0 and cost_AB <= cost_BA:
+            return cost_AB
 
-        if costBA > 0 and costBA <= costAB:
-            return costBA
+        if cost_BA > 0 and cost_BA <= cost_AB:
+            return cost_BA
         
         return 0
 
