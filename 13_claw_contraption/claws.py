@@ -11,33 +11,12 @@ class Vector2:
             return self
         return Vector2(self.x + other.x, self.y + other.y)
 
-    def __lt__(self, other: object):
-        if not isinstance(other, Vector2):
-            return False
-        return self.x < other.x and self.y < other.y
-
-    def __gt__(self, other: object):
-        if not isinstance(other, Vector2):
-            return False
-        return self.x > other.x or self.y > other.y
-
-    def __eq__(self, other: object):
-        if not isinstance(other, Vector2):
-            return False
-        return self.x == other.x and self.y == other.y
-
     def __mul__(self, other: object):
         if isinstance(other, int):
             return Vector2(self.x * other, self.y * other)
         if isinstance(other, 'Vector2'):
             return Vector2(self.x * other.x, self.y * other.y)
         return self
-
-    def __str__(self):
-        return f"({self.x},{self.y})"
-
-    def __repr__(self):
-        return f"Vector2({self.x},{self.y})"
 
 
 class Ray2:
@@ -105,7 +84,7 @@ class Claw_Machine:
 
         if cost_BA > 0 and cost_BA <= cost_AB:
             return cost_BA
-        
+
         return 0
 
     def get_cost(self, amount_a: int, amount_b: int):
@@ -148,7 +127,7 @@ if __name__ == "__main__":
 
     for cm in claw_machines:
         cm.add_10_pow_n(13)
-    
+
     # for i, m in enumerate(claw_machines):
     #     print(f"machine {i+1:03}: {m.min_cost}")
     print(f"total sum pt2: {sum([m.min_cost for m in claw_machines])}")
