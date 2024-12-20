@@ -46,12 +46,12 @@ class Room:
         self.size_y = size_y
         self.robots = robots
         self.ticks_passed = 0
-        self.min_noises = []
+        self.min_noises_factor = []
 
     def tick(self):
         self.ticks_passed += 1
         for robot in self.robots:
-            robot.tick( self.size_x, self.size_y)
+            robot.tick(self.size_x, self.size_y)
 
     def shift_time(self, ticks: int):
         self.ticks_passed = ticks
@@ -83,9 +83,42 @@ class Room:
             if loc[0] > self.size_x//2 and loc[1] > self.size_y//2:
                 sum_se += locations[loc]
 
-        print(sum_nw, sum_ne, sum_sw, sum_se)
-
         return sum_nw * sum_ne * sum_sw * sum_se
+
+    def find_min_noise_factor(self, limit: int, start=0):
+        if start > 0:
+            self.shift_time(start)
+        steps_min_noise = 0
+        for i in range(limit):
+            self.tick()
+            noise_factor = self.get_noise_factor()
+
+            if len(self.min_noises_factor) == 0 or self.min_noises_factor[-1] > noise_factor:
+                self.min_noises_factor.append(noise_factor)
+                steps_min_noise = self.ticks_passed
+
+            print(f"min noise: {self.min_noises_factor[-1]} at {
+                  steps_min_noise} ticks passed: {self.ticks_passed} of {limit}")
+
+        return steps_min_noise
+
+    def get_noise_factor(self):
+        locations = self.locate_robots()
+        noise_factor = 0
+        prev_value = 0
+        for y in range(self.size_y):
+            for x in range(self.size_x):
+                if (x, y) in locations:
+                    current_value = locations[(x, y)]
+                else:
+                    current_value = 0
+
+                if current_value != prev_value:
+                    noise_factor += 1
+
+                prev_value = current_value
+
+        return noise_factor
 
     def __str__(self):
         locations = self.locate_robots()
@@ -100,7 +133,8 @@ class Room:
                 out += "|" if x == self.size_x//2 or x == self.size_x//2 - 1 else ""
             out += f"\n{self.size_x * "-" +
                         "--"}\n" if y == self.size_y//2 or y == self.size_y//2 - 1 else "\n"
-        out += f"safety factor: {self.get_safety_factor()}"
+        out += f"safety factor: {self.get_safety_factor()
+                                 }, noise factor {self.get_noise_factor()}"
         return out
 
 
@@ -117,11 +151,24 @@ if __name__ == "__main__":
     # robots = get_robots()
     # room = Room(11, 7, robots)
 
+    # part 1
+
+    # robots = get_robots("input.txt")
+    # room = Room(101, 103, robots)
+
+    # print(room)
+    # room.shift_time(100)
+    # print(room)
+
+    # part 2
     robots = get_robots("input.txt")
     room = Room(101, 103, robots)
 
-    print(room)
-    # room.shift_time(100)
-    for i in range(100):
-        room.tick()
+    min_noise_steps = room.find_min_noise_factor(50000)
+    print(room.min_noises_factor)
+
+    robots = get_robots("input.txt")
+    room = Room(101, 103, robots)
+
+    room.shift_time(min_noise_steps)
     print(room)
