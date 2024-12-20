@@ -164,7 +164,7 @@ if __name__ == "__main__":
     robots = get_robots("input.txt")
     room = Room(101, 103, robots)
 
-    min_noise_steps = room.find_min_noise_factor(50000)
+    min_noise_steps = room.find_min_noise_factor(10000)
     print(room.min_noises_factor)
 
     robots = get_robots("input.txt")
