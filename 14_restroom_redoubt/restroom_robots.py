@@ -15,7 +15,7 @@ class Vector2:
         if isinstance(other, int):
             return Vector2(self.x * other, self.y * other)
         return self
-    
+
     def __mod__(self, operator: int):
         return Vector2(self.x % operator, self.y % operator)
 
@@ -28,12 +28,14 @@ class Robot:
         self.pos = pos
         self.vel = vel
 
-    def shift_ticks(self, ticks: int):
-        self.pos += self.vel * ticks
+    def tick(self, size_x: int, size_y: int):
+        self.pos += self.vel
+        self.pos = Vector2(self.pos.x % size_x, self.pos.y % size_y)
 
-    def set_pos(self, new_pos: Vector2):
-        self.pos = new_pos
-    
+    def shift_ticks(self, ticks: int, size_x: int, size_y: int):
+        self.pos += self.vel * ticks
+        self.pos = Vector2(self.pos.x % size_x, self.pos.y % size_y)
+
     def __str__(self):
         return f"({self.pos.x},{self.pos.y})"
 
@@ -44,12 +46,17 @@ class Room:
         self.size_y = size_y
         self.robots = robots
         self.ticks_passed = 0
+        self.min_noises = []
+
+    def tick(self):
+        self.ticks_passed += 1
+        for robot in self.robots:
+            robot.tick( self.size_x, self.size_y)
 
     def shift_time(self, ticks: int):
         self.ticks_passed = ticks
         for robot in self.robots:
-            robot.shift_ticks(ticks)
-            robot.set_pos(Vector2(robot.pos.x % self.size_x, robot.pos.y % self.size_y))
+            robot.shift_ticks(ticks, self.size_x, self.size_y)
 
     def locate_robots(self):
         locations = {}
@@ -75,22 +82,24 @@ class Room:
                 sum_sw += locations[loc]
             if loc[0] > self.size_x//2 and loc[1] > self.size_y//2:
                 sum_se += locations[loc]
-        
+
         print(sum_nw, sum_ne, sum_sw, sum_se)
 
         return sum_nw * sum_ne * sum_sw * sum_se
 
-
     def __str__(self):
         locations = self.locate_robots()
         out = ""
-        out += f"ticks passed: {self.ticks_passed}, Room W:{self.size_x} H:{self.size_y}\n"
+        out += f"ticks passed: {self.ticks_passed}, Room W:{
+            self.size_x} H:{self.size_y}\n"
         for y in range(self.size_y):
             for x in range(self.size_x):
-                out += str(locations[(x, y)]) if (x, y) in locations.keys() else "."
+                out += str(locations[(x, y)]) if (x,
+                                                  y) in locations.keys() else "."
                 self.size_x//2
                 out += "|" if x == self.size_x//2 or x == self.size_x//2 - 1 else ""
-            out += f"\n{self.size_x * "-"+"--"}\n" if y == self.size_y//2 or y == self.size_y//2 - 1 else "\n"
+            out += f"\n{self.size_x * "-" +
+                        "--"}\n" if y == self.size_y//2 or y == self.size_y//2 - 1 else "\n"
         out += f"safety factor: {self.get_safety_factor()}"
         return out
 
@@ -112,6 +121,7 @@ if __name__ == "__main__":
     room = Room(101, 103, robots)
 
     print(room)
-    room.shift_time(100)
+    # room.shift_time(100)
+    for i in range(100):
+        room.tick()
     print(room)
-  
