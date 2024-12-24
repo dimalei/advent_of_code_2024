@@ -1,7 +1,4 @@
 from enum import Enum
-import os
-import time
-import keyboard
 
 
 class Vector2:
@@ -81,17 +78,14 @@ class Box2(WarehouseObject):
 
         self.pos = [pos + direction.value for pos in self.pos]
 
-        
         for object_ahead in objects_ahead:
             if isinstance(object_ahead, Box2):
                 object_ahead.move_all(direction, all_objects)
-            
 
     def is_moveable(self, direction: Direction, all_objects: list) -> bool:
         objects_ahead = self.get_objects_ahead(direction, all_objects)
 
         if len(objects_ahead) == 0:
-            # self.pos = [pos + direction.value for pos in self.pos]
             return True
 
         is_ahead_moveable = []
@@ -102,10 +96,7 @@ class Box2(WarehouseObject):
             else:
                 return False
 
-        if not False in is_ahead_moveable:
-            return True
-
-        return False
+        return not False in is_ahead_moveable
 
 
 class Warehouse:
@@ -122,6 +113,28 @@ class Warehouse:
 
     def find_height(self):
         return max([max([pos.y for pos in o.pos]) for o in self.wh_objects])
+
+    def objects_to_dict(self) -> dict:
+        objects_dict = {}
+        for o in self.wh_objects:
+            objects_dict[o.pos[0].to_tuple()] = o.symbol
+        objects_dict[self.robot.pos[0].to_tuple()] = "@"
+        return objects_dict
+
+    def run_instructions(self):
+        for direction in instructions:
+            self.robot.move(direction, self.wh_objects)
+            print(self)
+
+    def move_robot(self, direction: Direction):
+        self.robot.move(direction, self.wh_objects)
+
+    def get_gps_sum(self):
+        sum = 0
+        for o in self.wh_objects:
+            if isinstance(o, Box2):
+                sum += 100 * o.pos[0].y + o.pos[0].x
+        return sum
 
     def __str__(self):
         out = ""
@@ -140,47 +153,6 @@ class Warehouse:
                     out += "."
             out += "\n"
         return out
-
-    def objects_to_dict(self) -> dict:
-        objects_dict = {}
-        for o in self.wh_objects:
-            objects_dict[o.pos[0].to_tuple()] = o.symbol
-        objects_dict[self.robot.pos[0].to_tuple()] = "@"
-        return objects_dict
-
-    def run_instructions(self):
-        for direction in instructions:
-            self.robot.move(direction, self.wh_objects)
-            # os.system('cls' if os.name == 'nt' else 'clear')
-            print(self)
-
-    def run_by_keys(self):
-        print("running by keys")
-        while True:
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print(self)
-            pressed = keyboard.read_key()
-            if pressed == "up":
-                self.robot.move(Direction.UP, self.wh_objects)
-            if pressed == "left":
-                self.robot.move(Direction.LEFT, self.wh_objects)
-            if pressed == "down":
-                self.robot.move(Direction.DOWN, self.wh_objects)
-            if pressed == "right":
-                self.robot.move(Direction.RIGHT, self.wh_objects)
-            if pressed == "x":
-                break
-            time.sleep(0.15)
-
-    def move_robot(self, direction: Direction):
-        self.robot.move(direction, self.wh_objects)
-
-    def get_gps_sum(self):
-        sum = 0
-        for o in self.wh_objects:
-            if isinstance(o, Box2):
-                sum += 100 * o.pos[0].y + o.pos[0].x
-        return sum
 
 
 def parse_input(robot: object, wh_objects: list, instructions: list, file_name="test_input.txt"):
@@ -215,18 +187,6 @@ if __name__ == "__main__":
     robot = robot[0]
 
     wh = Warehouse(robot, wh_objects, instructions)
-    # print(wh)
-    # print(robot.objects_ahead(Direction.LEFT, wh_objects))
-    # wh.move_robot(Direction.LEFT)
-    # print(wh)
-    # wh.move_robot(Direction.UP)
-    # print(wh)
-    # wh.move_robot(Direction.LEFT)
-    # print(wh)
-    # wh.move_robot(Direction.LEFT)
-    # print(wh)
-    # wh.move_robot(Direction.DOWN)
-    # print(wh)
-    # wh.run_by_keys()
+
     wh.run_instructions()
     print(wh.get_gps_sum())
