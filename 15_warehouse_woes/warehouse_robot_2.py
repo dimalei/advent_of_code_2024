@@ -1,5 +1,6 @@
 from enum import Enum
-import os
+import time
+import keyboard
 
 
 class Vector2:
@@ -69,23 +70,38 @@ class Box2(WarehouseObject):
         super().__init__(pos)
         self.symbol = "[]" if len(pos) > 1 else "@"
 
-    def move(self, direction: Direction, all_objects: list) -> bool:
+    def move(self, direction: Direction, all_objects: list):
+        if not self.is_moveable(direction, all_objects):
+            return
+        self.move_all(direction, all_objects)
+
+    def move_all(self, direction: Direction, all_objects: list):
+        objects_ahead = self.get_objects_ahead(direction, all_objects)
+
+        self.pos = [pos + direction.value for pos in self.pos]
+
+        
+        for object_ahead in objects_ahead:
+            if isinstance(object_ahead, Box2):
+                object_ahead.move_all(direction, all_objects)
+            
+
+    def is_moveable(self, direction: Direction, all_objects: list) -> bool:
         objects_ahead = self.get_objects_ahead(direction, all_objects)
 
         if len(objects_ahead) == 0:
-            self.pos = [pos + direction.value for pos in self.pos]
+            # self.pos = [pos + direction.value for pos in self.pos]
             return True
 
         is_ahead_moveable = []
         for object_ahead in objects_ahead:
             if isinstance(object_ahead, Box2):
-                is_ahead_moveable.append(object_ahead.move(direction, all_objects))
+                is_ahead_moveable.append(
+                    object_ahead.is_moveable(direction, all_objects))
             else:
                 return False
 
         if not False in is_ahead_moveable:
-            # move
-            self.pos = [pos + direction.value for pos in self.pos]
             return True
 
         return False
@@ -137,6 +153,23 @@ class Warehouse:
             # os.system('cls' if os.name == 'nt' else 'clear')
             print(self)
 
+    def run_by_keys(self):
+        print("running by keys")
+        while True:
+            print(self)
+            pressed = keyboard.read_key()
+            if pressed == "up":
+                self.robot.move(Direction.UP, self.wh_objects)
+            if pressed == "left":
+                self.robot.move(Direction.LEFT, self.wh_objects)
+            if pressed == "down":
+                self.robot.move(Direction.DOWN, self.wh_objects)
+            if pressed == "right":
+                self.robot.move(Direction.RIGHT, self.wh_objects)
+            if pressed == "x":
+                break
+            time.sleep(0.2)
+
     def move_robot(self, direction: Direction):
         self.robot.move(direction, self.wh_objects)
 
@@ -154,7 +187,8 @@ def parse_input(robot: object, wh_objects: list, instructions: list, file_name="
             for x, cell in enumerate(line.strip()):
                 x *= 2
                 if cell == "#":
-                    wh_objects.append(WarehouseObject([Vector2(x, y), Vector2(x + 1, y)]))
+                    wh_objects.append(WarehouseObject(
+                        [Vector2(x, y), Vector2(x + 1, y)]))
                 elif cell == "O":
                     wh_objects.append(Box2([Vector2(x, y), Vector2(x + 1, y)]))
                 elif cell == "@":
@@ -175,7 +209,7 @@ if __name__ == "__main__":
     instructions = []
 
     # parse_input(robot, wh_objects, instructions)
-    parse_input(robot, wh_objects, instructions, "input.txt")
+    parse_input(robot, wh_objects, instructions, "15_warehouse_woes/input.txt")
     robot = robot[0]
 
     wh = Warehouse(robot, wh_objects, instructions)
@@ -191,5 +225,6 @@ if __name__ == "__main__":
     # print(wh)
     # wh.move_robot(Direction.DOWN)
     # print(wh)
-    wh.run_instructions()
+    wh.run_by_keys()
+    # wh.run_instructions()
     print(wh.get_gps_sum())
