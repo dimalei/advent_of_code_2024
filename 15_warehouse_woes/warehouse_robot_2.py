@@ -7,9 +7,11 @@ class Vector2:
         self.__x = int(x)
         self.__y = int(y)
 
+    @property
     def x(self):
         return self.__x
 
+    @property
     def y(self):
         return self.__y
 
@@ -34,47 +36,64 @@ class Direction(Enum):
 
 class WarehouseObject:
     """A WO is a wall by default and cant be moved"""
-    symbol = "#"
 
-    def __init__(self, pos: Vector2):
+    def __init__(self, pos: list):
         self.pos = pos
+        self.symbol = "#" * len(pos)
 
-    def object_ahead(self, direction: Direction, objects: list) -> 'WarehouseObject':
-        ahead_pos = self.pos + direction.value
-        for o in objects:
-            if isinstance(o, WarehouseObject) and o.pos == ahead_pos:
-                return o
-        return None
+    def get_objects_ahead(self, direction: Direction, all_objects: list) -> list:
+        """Returns all objects ahead in the defined direction"""
+
+        objects_ahead = []
+        for position in self.pos:
+            ahead_pos = position + direction.value
+            for object in all_objects:
+                if object != self and isinstance(object, WarehouseObject) and ahead_pos in object.pos:
+                    objects_ahead.append(object)
+        # filter duplicates
+        out = []
+        for object in objects_ahead:
+            if object not in out:
+                out.append(object)
+
+        return out
 
     def __str__(self):
         return f"pos_x: {self.pos.x()}, pos_y: {self.pos.y()}"
 
 
-class Box(WarehouseObject):
-    """A Box can be moved."""
-    symbol = "O"
+class Box2(WarehouseObject):
+    """Is a box or a Robot"""
 
     def __init__(self, pos):
         super().__init__(pos)
+        self.symbol = "[]" if len(pos) > 1 else "@"
 
-    def move(self, direction: Direction, objects: list) -> bool:
-        ahead = self.object_ahead(direction, objects)
+    def move(self, direction: Direction, all_objects: list) -> bool:
+        objects_ahead = self.get_objects_ahead(direction, all_objects)
 
-        if ahead == None:
-            self.pos += direction.value
+        if len(objects_ahead) == 0:
+            self.pos = [pos + direction.value for pos in self.pos]
             return True
 
-        if isinstance(ahead, Box):
-            if ahead.move(direction, objects):
-                self.pos += direction.value
-                return True
+        is_ahead_moveable = []
+        for object_ahead in objects_ahead:
+            if isinstance(object_ahead, Box2):
+                is_ahead_moveable.append(object_ahead.move(direction, all_objects))
+            else:
+                return False
+
+        if not False in is_ahead_moveable:
+            # move
+            self.pos = [pos + direction.value for pos in self.pos]
+            return True
 
         return False
 
 
 class Warehouse:
 
-    def __init__(self, robot: Box, wh_objects: WarehouseObject, instructions: list):
+    def __init__(self, robot: Box2, wh_objects: WarehouseObject, instructions: list):
         self.robot = robot
         self.wh_objects = wh_objects
         self.instructions = instructions
@@ -82,19 +101,24 @@ class Warehouse:
         self.height = self.find_height()
 
     def find_width(self):
-        return max([o.pos.x() for o in self.wh_objects])
+        return max([max([pos.x for pos in o.pos]) for o in self.wh_objects])
 
     def find_height(self):
-        return max([o.pos.y() for o in self.wh_objects])
+        return max([max([pos.y for pos in o.pos]) for o in self.wh_objects])
 
     def __str__(self):
         out = ""
         objects_dict = self.objects_to_dict()
+        skip_next = False
 
         for y in range(self.height + 1):
             for x in range(self.width + 1):
                 if (x, y) in objects_dict.keys():
+                    if len(objects_dict[(x, y)]) > 1:
+                        skip_next = True
                     out += objects_dict[(x, y)]
+                elif skip_next:
+                    skip_next = False
                 else:
                     out += "."
             out += "\n"
@@ -103,8 +127,8 @@ class Warehouse:
     def objects_to_dict(self) -> dict:
         objects_dict = {}
         for o in self.wh_objects:
-            objects_dict[o.pos.to_tuple()] = o.symbol
-        objects_dict[self.robot.pos.to_tuple()] = "@"
+            objects_dict[o.pos[0].to_tuple()] = o.symbol
+        objects_dict[self.robot.pos[0].to_tuple()] = "@"
         return objects_dict
 
     def run_instructions(self):
@@ -119,8 +143,8 @@ class Warehouse:
     def get_gps_sum(self):
         sum = 0
         for o in self.wh_objects:
-            if isinstance(o, Box):
-                sum += 100 * o.pos.y() + o.pos.x()
+            if isinstance(o, Box2):
+                sum += 100 * o.pos[0].y + o.pos[0].x
         return sum
 
 
@@ -128,12 +152,13 @@ def parse_input(robot: object, wh_objects: list, instructions: list, file_name="
     with open(file_name, "r") as file:
         for y, line in enumerate(file):
             for x, cell in enumerate(line.strip()):
+                x *= 2
                 if cell == "#":
-                    wh_objects.append(WarehouseObject(Vector2(x, y)))
+                    wh_objects.append(WarehouseObject([Vector2(x, y), Vector2(x + 1, y)]))
                 elif cell == "O":
-                    wh_objects.append(Box(Vector2(x, y)))
+                    wh_objects.append(Box2([Vector2(x, y), Vector2(x + 1, y)]))
                 elif cell == "@":
-                    robot.append(Box(Vector2(x, y)))
+                    robot.append(Box2([Vector2(x, y)]))
                 elif cell == "^":
                     instructions.append(Direction.UP)
                 elif cell == "v":
@@ -151,9 +176,20 @@ if __name__ == "__main__":
 
     # parse_input(robot, wh_objects, instructions)
     parse_input(robot, wh_objects, instructions, "input.txt")
+    robot = robot[0]
 
-    wh = Warehouse(robot[0], wh_objects, instructions)
-    print(wh)
+    wh = Warehouse(robot, wh_objects, instructions)
+    # print(wh)
+    # print(robot.objects_ahead(Direction.LEFT, wh_objects))
     # wh.move_robot(Direction.LEFT)
+    # print(wh)
+    # wh.move_robot(Direction.UP)
+    # print(wh)
+    # wh.move_robot(Direction.LEFT)
+    # print(wh)
+    # wh.move_robot(Direction.LEFT)
+    # print(wh)
+    # wh.move_robot(Direction.DOWN)
+    # print(wh)
     wh.run_instructions()
     print(wh.get_gps_sum())
