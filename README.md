@@ -1,5 +1,5 @@
 # AoC 2024
 
-This is the attemt for the my very first Advent of Christmas. 
+My fist attemt of Advent of Christmas.
 
 https://adventofcode.com/
