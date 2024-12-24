@@ -1,4 +1,5 @@
 from enum import Enum
+import os
 import time
 import keyboard
 
@@ -156,6 +157,7 @@ class Warehouse:
     def run_by_keys(self):
         print("running by keys")
         while True:
+            os.system('cls' if os.name == 'nt' else 'clear')
             print(self)
             pressed = keyboard.read_key()
             if pressed == "up":
@@ -168,7 +170,7 @@ class Warehouse:
                 self.robot.move(Direction.RIGHT, self.wh_objects)
             if pressed == "x":
                 break
-            time.sleep(0.2)
+            time.sleep(0.15)
 
     def move_robot(self, direction: Direction):
         self.robot.move(direction, self.wh_objects)
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     instructions = []
 
     # parse_input(robot, wh_objects, instructions)
-    parse_input(robot, wh_objects, instructions, "15_warehouse_woes/input.txt")
+    parse_input(robot, wh_objects, instructions, "input.txt")
     robot = robot[0]
 
     wh = Warehouse(robot, wh_objects, instructions)
@@ -225,6 +227,6 @@ if __name__ == "__main__":
     # print(wh)
     # wh.move_robot(Direction.DOWN)
     # print(wh)
-    wh.run_by_keys()
-    # wh.run_instructions()
+    # wh.run_by_keys()
+    wh.run_instructions()
     print(wh.get_gps_sum())
