@@ -13,7 +13,7 @@ class Vector2:
     @property
     def y(self):
         return self._y
-    
+
     def __add__(self, other):
         if isinstance(other, Vector2):
             return Vector2(self._x + other._x, self._y + other._y)
@@ -57,102 +57,52 @@ class Direction(Enum):
             return "<"
 
 
-class Path:
-    def __init__(self, pos: Vector2):
-        self._pos = pos
-
-    @property
-    def pos(self) -> Vector2:
-        return self._pos
-
-    def __eq__(self, other):
-        if isinstance(other, Path):
-            return self._pos == other._pos
-        return False
-
-    def __hash__(self):
-        return hash(self._pos)
-    
-    def __str__(self):
-        return f"Path({self._pos.x},{self._pos.y})"
-
-
-class Exit(Path):
-    def __init__(self, pos: Vector2):
-        super().__init__(pos)
-
-
-class Start(Path):
-    def __init__(self, pos: Vector2):
-        super().__init__(pos)
-
-
-class Trail(Path):
-    def __init__(self, pos, direction: Direction):
-        super().__init__(pos)
-        self.direction = direction
-
-    def __str__(self):
-        return self.direction.__str__()
-
-
-def parse_input(file_name="test_input.txt") -> list:
-    out = []
-    with open(file_name, "r") as file:
-        for y, line in enumerate(file):
-            for x, char in enumerate(line):
-                if char == ".":
-                    out.append(Path(Vector2(x, y)))
-                elif char == "E":
-                    out.append(Exit(Vector2(x, y)))
-                elif char == "S":
-                    out.append(Start(Vector2(x, y)))
-        return out
-
-
 class Maze:
-    def __init__(self, paths):
-        self.paths = paths
-        self.player_pos = self.get_start()
+    def __init__(self, file_name="test_input.txt"):
+        self.paths = []
+        self.start = Vector2(0, 0)
+        self.exit = Vector2(0, 0)
+        self.parse_input(file_name)
+        self.player_pos = self.start
         self.player_heading = Direction.EAST
-        self.player_trail = []
 
-    def get_start(self):
-        for path in paths:
-            if isinstance(path, Start):
-                return path.pos
+    def parse_input(self, file_name):
+        with open(file_name, "r") as file:
+            for y, line in enumerate(file):
+                for x, char in enumerate(line):
+                    if char == ".":
+                        self.paths.append(Vector2(x, y))
+                    elif char == "E":
+                        self.exit = Vector2(x, y)
+                    elif char == "S":
+                        self.start = (Vector2(x, y))
 
-    def see_ahead(self):
-        left_location = Path(self.player_pos + self.player_heading.turn_ccw())
-    
-        return left
+    # def see_ahead(self):
+    #     left_location = Path(self.player_pos + self.player_heading.turn_ccw())
+
+    #     return left
 
     def __str__(self):
         out = ""
-        max_x = max([path.pos.x for path in self.paths])
-        max_y = max([path.pos.y for path in self.paths])
+        max_x = max([path.x for path in self.paths])
+        max_y = max([path.y for path in self.paths])
 
         for y in range(max_y + 2):
             for x in range(max_x + 2):
 
-                location = Path(Vector2(x, y))
+                location = Vector2(x, y)
 
-                if location.pos == self.player_pos:
+                if location == self.player_pos:
                     out += self.player_heading.__str__()
 
-                elif location in self.player_trail:
-                    index = self.player_trail.index(location)
-                    out += self.player_trail[index]
-
                 elif location in self.paths:
-                    index = self.paths.index(location)
-                    location = self.paths[index]
-                    if isinstance(location, Exit):
-                        out += "E"
-                    elif isinstance(location, Start):
-                        out += "S"
-                    else:
-                        out += "."
+                    out += "."
+
+                elif location == self.start:
+                    out += "S"
+
+                elif location == self.exit:
+                    out += "E"
 
                 else:
                     out += "#"
@@ -161,10 +111,8 @@ class Maze:
 
 
 if __name__ == "__main__":
-    paths = parse_input()
-    print(paths)
 
-    maze = Maze(paths)
+    maze = Maze()
 
     print(maze)
     print(maze.see_ahead())
