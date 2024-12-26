@@ -66,6 +66,16 @@ class Direction(Enum):
     STRAIGHT = 2
 
 
+class Node:
+    def __init__(self, root: 'Node', pos: Vector2, heading: Heading, branches: dict, trail: list, cost: int):
+        self.root = root
+        self.branches = branches
+        self.trail = trail
+        self.cost = cost
+        self.heading = heading
+        self.pos = pos
+
+
 class Maze:
     def __init__(self, file_name="test_input.txt"):
         self.paths = []
@@ -76,6 +86,8 @@ class Maze:
         self.player_heading = Heading.EAST
         self.trails = []
         self.lowest_cost = 0
+        self.root_note = None
+        self.exit_nodes = []
 
     def parse_input(self, file_name):
         with open(file_name, "r") as file:
@@ -85,12 +97,13 @@ class Maze:
                         self.paths.append(Vector2(x, y))
                     elif char == "E":
                         self.exit = Vector2(x, y)
+                        self.paths.append(self.exit)
                     elif char == "S":
                         self.start = (Vector2(x, y))
+                        self.paths.append(self.start)
 
     def see_ahead(self) -> list:
         directions = []
-
         if self.player_pos + self.player_heading.turn_ccw().value in self.paths:
             directions.append(Direction.LEFT)
         if self.player_pos + self.player_heading.value in self.paths:
@@ -99,6 +112,45 @@ class Maze:
             directions.append(Direction.RIGHT)
 
         return directions
+
+    def create_tree(self):
+        cost = 0
+        trail = []
+        self.player_pos = self.start
+        self.player_heading = Heading.EAST
+        directions = self.see_ahead()
+
+        # follow path until next junction (node)
+        while len(directions) == 1:
+            if Direction.LEFT in directions:
+                cost += 1001
+                self.player_heading = self.player_heading.turn_ccw()
+            # go straight
+            elif Direction.STRAIGHT in directions:
+                cost += 1
+            # go right
+            elif Direction.RIGHT in directions:
+                cost += 1001
+                self.player_heading = self.player_heading.turn_cw()
+
+            self.player_pos += self.player_heading.value
+            trail.append(self.player_pos)
+            directions = self.see_ahead()
+
+        branches = {}
+        for direction in directions:
+            branches[direction] = None
+
+        # create a node and follow left most option
+        self.root_note = Node(None, self.player_pos, self.player_heading, branches, trail, cost)
+
+    def grow_branch(self, node: Node):
+        # define start direction
+        for branch in node.branches:
+            pass
+
+
+
 
     def create_trail(self):
         trail = {}
@@ -123,7 +175,6 @@ class Maze:
                 cost += 1001
                 self.player_heading = self.player_heading.turn_cw()
                 self.player_pos += self.player_heading.value
-
             else:
                 break
 
@@ -163,9 +214,27 @@ if __name__ == "__main__":
 
     maze = Maze()
 
-    print(maze)
-    print(maze.create_trail())
-    print(maze)
+    # print(maze)
+    # maze.create_tree()
+    # print(maze)
+
+
+    
+
+    direction_dict = {Direction.LEFT: Node(None,None,None,None,None,None),
+                      Direction.STRAIGHT: None,
+                      Direction.RIGHT: None}
+    
+    # return first empty
+    next_direction = None
+    for key in direction_dict.keys():
+        if direction_dict[key] == None:
+            next_direction = key
+            break
+    
+    print(next_direction)
+
+
 
     # path1 = Path(Vector2(12, 13))
     # path2 = Exit(Vector2(12, 13))
