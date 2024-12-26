@@ -94,6 +94,7 @@ class Maze:
         self.trail = {}
         self.exit_nodes = []
         self.unsolved_nodes = [self.create_root()]
+        self.min_cost = 0
 
     def parse_input(self, file_name):
         with open(file_name, "r") as file:
@@ -135,9 +136,12 @@ class Maze:
             nodes += 1
             # if nodes % 100 == 0:
             #     print(self)
-            print(f"processed nodes: {nodes:>10} unprocessed nodes: {len(self.unsolved_nodes):>10}")
+            print(f"processed: {nodes:>10} unprocessed: {len(self.unsolved_nodes):>10} exit_nodes: {len(self.exit_nodes):>10} min_cost: {self.min_cost:>10}")
             for branch in node.branches.keys():
-                self.unsolved_nodes.append(self.extend_branch(node, branch))
+                new_branch = self.extend_branch(node, branch)
+                # don't calculate nodes that are too expensive
+                if self.min_cost == 0 or new_branch.cost < self.min_cost:
+                    self.unsolved_nodes.append(self.extend_branch(node, branch))
 
     def extend_node(self, node: Node):
         """recursive approach"""
@@ -191,6 +195,8 @@ class Maze:
             if player_pos == self.exit:
                 exit = Node(player_pos, player_heading, {}, trail, cost)
                 self.exit_nodes.append(exit)
+                if self.min_cost == 0 or cost < self.min_cost:
+                    self.min_cost = cost
                 return exit
 
             # continue to follow
@@ -232,8 +238,8 @@ class Maze:
 
 if __name__ == "__main__":
 
-    # maze = Maze()
-    maze = Maze("input.txt")
+    maze = Maze()
+    # maze = Maze("input.txt")
 
     maze.process_nodes()
     cheapest_exit = min(maze.exit_nodes)
