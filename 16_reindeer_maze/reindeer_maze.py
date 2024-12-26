@@ -93,6 +93,7 @@ class Maze:
         self.root_node = self.create_root()
         self.trail = {}
         self.exit_nodes = []
+        self.unsolved_nodes = [self.create_root()]
 
     def parse_input(self, file_name):
         with open(file_name, "r") as file:
@@ -124,7 +125,22 @@ class Maze:
             directions.append(Direction.RIGHT)
         return directions
 
+    def process_nodes(self):
+        """iterative approach"""
+        while len(self.unsolved_nodes) > 0:
+            node = self.unsolved_nodes.pop()
+            self.trail = node.trail
+            # print(self)
+            global nodes
+            nodes += 1
+            # if nodes % 100 == 0:
+            #     print(self)
+            print(f"processed nodes: {nodes:>10} unprocessed nodes: {len(self.unsolved_nodes):>10}")
+            for branch in node.branches.keys():
+                self.unsolved_nodes.append(self.extend_branch(node, branch))
+
     def extend_node(self, node: Node):
+        """recursive approach"""
         for branch in node.branches.keys():
             node.branches[branch] = self.extend_branch(node, branch)
             global nodes
@@ -216,10 +232,10 @@ class Maze:
 
 if __name__ == "__main__":
 
-    maze = Maze()
-    # maze = Maze("input.txt")
+    # maze = Maze()
+    maze = Maze("input.txt")
 
-    maze.extend_node(maze.root_node)
+    maze.process_nodes()
     cheapest_exit = min(maze.exit_nodes)
     maze.trail = cheapest_exit.trail
     print(maze)
