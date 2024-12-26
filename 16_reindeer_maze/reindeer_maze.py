@@ -1,5 +1,7 @@
 from enum import Enum
 
+global nodes
+nodes = 0
 
 class Vector2:
     def __init__(self, x: int, y: int):
@@ -67,29 +69,30 @@ class Direction(Enum):
 
 
 class Node:
-    def __init__(self, root: 'Node', pos: Vector2, heading: Heading, branches: dict, trail: list, cost: int):
-        self.root = root
+    def __init__(self, pos: Vector2, heading: Heading, branches: dict, trail: dict, cost: int):
         self.pos = pos
         self.heading = heading
         self.branches = branches
         self.trail = trail
         self.cost = cost
 
+    def __lt__(self, other):
+        if isinstance(other, Node):
+            return self.cost < other.cost
+
     def __repr__(self):
-        return f"Node((parent), {self.pos}, {self.heading}, branches: {len(self.branches)}, trail: {len(self.trail)}, cost: {self.cost})"
+        return f"{self.pos}, {self.heading}, branches: {len(self.branches)}, trail: {len(self.trail)}, cost: {self.cost})"
+
 
 class Maze:
     def __init__(self, file_name="test_input.txt"):
         self.paths = []
-        self.start = Vector2(0, 0)
-        self.exit = Vector2(0, 0)
+        self.start = None
+        self.exit = None
         self.parse_input(file_name)
         self.root_node = self.create_root()
-        self.trails = []
-        self.lowest_cost = 0
+        self.trail = {}
         self.exit_nodes = []
-        print(self.start)
-        print(self.root_node)
 
     def parse_input(self, file_name):
         with open(file_name, "r") as file:
@@ -109,7 +112,7 @@ class Maze:
         branches = {}
         for direction in directions:
             branches[direction] = None
-        return Node(None, self.start, Heading.EAST, branches, [], 0)
+        return Node(self.start, Heading.EAST, branches, {}, 0)
 
     def see_ahead(self, player_pos: Vector2, player_heading: Heading) -> list:
         directions = []
@@ -124,11 +127,14 @@ class Maze:
     def extend_node(self, node: Node):
         for branch in node.branches.keys():
             node.branches[branch] = self.extend_branch(node, branch)
-            print(f"node created: {node.branches[branch]}")
+            global nodes
+            nodes += 1
+            print(f"nodes: {nodes}")
+            self.extend_node(node.branches[branch])
 
     def extend_branch(self, node: Node, first_direction: Direction) -> Node:
         cost = node.cost
-        trail = node.trail
+        trail = node.trail.copy()
         player_pos = node.pos
         player_heading = node.heading
 
@@ -143,7 +149,7 @@ class Maze:
             player_heading = player_heading.turn_cw()
 
         player_pos += player_heading.value
-        trail.append(player_pos)
+        trail[player_pos] = player_heading
 
         # then follow path
         directions = self.see_ahead(player_pos, player_heading)
@@ -160,21 +166,26 @@ class Maze:
                 player_heading = player_heading.turn_cw()
 
             player_pos += player_heading.value
-            trail.append(player_pos)
+
+            # if previous trail is reached -> dead end node
+            if player_pos in trail.keys():
+                return Node(player_pos, player_heading, {}, trail, cost)
+
+            # if exit is reached -> exit node
+            if player_pos == self.exit:
+                exit = Node(player_pos, player_heading, {}, trail, cost)
+                self.exit_nodes.append(exit)
+                return exit
+
+            # continue to follow
             directions = self.see_ahead(player_pos, player_heading)
+            trail[player_pos] = player_heading
 
-            print(player_pos)
-
-        # retrun none at dead end
-        if len(directions) == 0:
-            return None
-
-        # at the junction, create the new node
+        # if junction or dead end -> new node
         branches = {}
         for direction in directions:
             branches[direction] = None
-
-        return Node(None, player_pos, player_heading, branches, trail.copy(), cost)
+        return Node(player_pos, player_heading, branches, trail, cost)
 
     def __str__(self):
         out = ""
@@ -186,18 +197,17 @@ class Maze:
 
                 location = Vector2(x, y)
 
-                if len(self.trails) > 0 and location in self.trails[-1]:
-                    out += self.trails[-1][location].__str__()
+                if len(self.trail) > 0 and location in self.trail.keys():
+                    out += self.trail[location].__str__()
 
-                elif location == self.player_pos:
-                    out += self.player_heading.__str__()
-                elif location in self.paths:
-                    out += "."
+                # elif location == self.player_pos:
+                #     out += self.player_heading.__str__()
                 elif location == self.start:
                     out += "S"
                 elif location == self.exit:
                     out += "E"
-
+                elif location in self.paths:
+                    out += "."
                 else:
                     out += "#"
             out += "\n"
@@ -207,14 +217,10 @@ class Maze:
 if __name__ == "__main__":
 
     maze = Maze()
+    # maze = Maze("input.txt")
 
-    # print(maze)
     maze.extend_node(maze.root_node)
-    # print(maze)
-
-    # path1 = Path(Vector2(12, 13))
-    # path2 = Exit(Vector2(12, 13))
-
-    # my_list = [path1]
-
-    # print(path2 in my_list)
+    cheapest_exit = min(maze.exit_nodes)
+    maze.trail = cheapest_exit.trail
+    print(maze)
+    print(f"min cost: {cheapest_exit.cost}")
