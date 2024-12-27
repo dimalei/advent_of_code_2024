@@ -3,6 +3,7 @@ from enum import Enum
 global nodes
 nodes = 0
 
+
 class Vector2:
     def __init__(self, x: int, y: int):
         self._x = x
@@ -69,19 +70,25 @@ class Direction(Enum):
 
 
 class Node:
-    def __init__(self, pos: Vector2, heading: Heading, branches: dict, trail: dict, cost: int):
-        self.pos = pos
+    def __init__(self, pos: Vector2, heading: Heading, edges: dict, trail: dict, cost: int, previous: 'Node'):
+        self.pos = pos  # pos = unique identifier of a node
         self.heading = heading
-        self.branches = branches
+        self.previous = previous
+        self.edges = edges
         self.trail = trail
         self.cost = cost
+
+    def __eq__(self, other):
+        if isinstance(other, Node):
+            return self.pos == other.pos
+        return False
 
     def __lt__(self, other):
         if isinstance(other, Node):
             return self.cost < other.cost
 
     def __repr__(self):
-        return f"{self.pos}, {self.heading}, branches: {len(self.branches)}, trail: {len(self.trail)}, cost: {self.cost})"
+        return f"{self.pos}, {self.heading}, branches: {len(self.edges)}, trail: {len(self.trail)}, cost: {self.cost})"
 
 
 class Maze:
@@ -89,12 +96,12 @@ class Maze:
         self.paths = []
         self.start = None
         self.exit = None
+        self.root_node = None
+        self.nodes = []
         self.parse_input(file_name)
-        self.root_node = self.create_root()
+        self.create_root()
         self.trail = {}
         self.exit_nodes = []
-        self.unsolved_nodes = [self.create_root()]
-        self.min_cost = 0
 
     def parse_input(self, file_name):
         with open(file_name, "r") as file:
@@ -111,10 +118,12 @@ class Maze:
 
     def create_root(self):
         directions = self.see_ahead(self.start, Heading.EAST)
-        branches = {}
+        edges = {}
         for direction in directions:
-            branches[direction] = None
-        return Node(self.start, Heading.EAST, branches, {}, 0)
+            edges[direction] = None
+        print(f"initial brnaches: {edges}")
+        self.root_node = Node(self.start, Heading.EAST, edges, {}, 0, None)
+        self.nodes.append(self.root_node)
 
     def see_ahead(self, player_pos: Vector2, player_heading: Heading) -> list:
         directions = []
@@ -126,33 +135,8 @@ class Maze:
             directions.append(Direction.RIGHT)
         return directions
 
-    def process_nodes(self):
-        """iterative approach"""
-        while len(self.unsolved_nodes) > 0:
-            node = self.unsolved_nodes.pop()
-            self.trail = node.trail
-            # print(self)
-            global nodes
-            nodes += 1
-            # if nodes % 100 == 0:
-            #     print(self)
-            print(f"processed: {nodes:>10} unprocessed: {len(self.unsolved_nodes):>10} exit_nodes: {len(self.exit_nodes):>10} min_cost: {self.min_cost:>10}")
-            for branch in node.branches.keys():
-                new_branch = self.extend_branch(node, branch)
-                # don't calculate nodes that are too expensive
-                if self.min_cost == 0 or new_branch.cost < self.min_cost:
-                    self.unsolved_nodes.append(self.extend_branch(node, branch))
-
-    def extend_node(self, node: Node):
-        """recursive approach"""
-        for branch in node.branches.keys():
-            node.branches[branch] = self.extend_branch(node, branch)
-            global nodes
-            nodes += 1
-            print(f"nodes: {nodes}")
-            self.extend_node(node.branches[branch])
-
     def extend_branch(self, node: Node, first_direction: Direction) -> Node:
+        """follows a path and returns the next node with it's cost"""
         cost = node.cost
         trail = node.trail.copy()
         player_pos = node.pos
@@ -187,27 +171,76 @@ class Maze:
 
             player_pos += player_heading.value
 
-            # if previous trail is reached -> dead end node
-            if player_pos in trail.keys():
-                return Node(player_pos, player_heading, {}, trail, cost)
-
             # if exit is reached -> exit node
             if player_pos == self.exit:
-                exit = Node(player_pos, player_heading, {}, trail, cost)
+                exit = Node(player_pos, player_heading, {}, trail, cost, node)
                 self.exit_nodes.append(exit)
-                if self.min_cost == 0 or cost < self.min_cost:
-                    self.min_cost = cost
                 return exit
 
             # continue to follow
             directions = self.see_ahead(player_pos, player_heading)
             trail[player_pos] = player_heading
 
-        # if junction or dead end -> new node
+        # dead end
+        if len(directions) == 0:
+            return None
+
+        # if junction -> new node
         branches = {}
         for direction in directions:
             branches[direction] = None
-        return Node(player_pos, player_heading, branches, trail, cost)
+        return Node(player_pos, player_heading, branches, trail, cost, node)
+
+    def dijkstra(self):
+        queue = []
+        queue.append(self.root_node)
+        steps = 0
+        while len(queue) > 0 and len(self.exit_nodes) < 1:
+            steps += 1
+            print(f"queue len: {len(queue)}")
+            # sort queue
+            queue.sort()
+            # get cheapest node
+            current_node = queue.pop(0)
+            self.nodes.append(current_node)
+            print(f"processing node: {steps}")
+            for edge in current_node.edges:
+                new_node = self.extend_branch(
+                    current_node, edge)
+
+                # ignore dead ends and exit nodes
+                if new_node == None:
+                    continue
+
+                print(f"_____\nnew node: {new_node}")
+                self.trail = new_node.trail
+                print(self)
+
+                # if node is in queue, replace with cheaper node
+                if new_node in queue:
+                    index = queue.index(new_node)
+                    if new_node < queue[index]:
+                        print("fond a smaller way to the same node")
+                        queue.pop(index)
+                        queue.append(new_node)
+                    continue
+                # ignore if node was already processed
+                elif new_node in self.nodes:
+                    print("node already processed")
+                    continue
+
+                queue.append(new_node)
+
+    def print_cheapest(self):
+        if len(self.exit_nodes) == 0:
+            print(self)
+            print("no exit node")
+            return
+
+        min_exit = min(self.exit_nodes)
+        self.trail = min_exit.trail
+        print(self)
+        print(f"cost: {min_exit.cost}")
 
     def __str__(self):
         out = ""
@@ -241,8 +274,5 @@ if __name__ == "__main__":
     maze = Maze()
     # maze = Maze("input.txt")
 
-    maze.process_nodes()
-    cheapest_exit = min(maze.exit_nodes)
-    maze.trail = cheapest_exit.trail
-    print(maze)
-    print(f"min cost: {cheapest_exit.cost}")
+    maze.dijkstra()
+    maze.print_cheapest()
