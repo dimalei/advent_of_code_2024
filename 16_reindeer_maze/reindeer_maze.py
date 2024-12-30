@@ -71,7 +71,7 @@ class Direction(Enum):
 
 class Node:
     def __init__(self, pos: Vector2, heading: Heading, edges: dict, trail: dict, cost: int, previous: 'Node'):
-        self.pos = pos  # pos = unique identifier of a node
+        self.pos = pos
         self.heading = heading
         self.previous = previous
         self.edges = edges
@@ -80,7 +80,7 @@ class Node:
 
     def __eq__(self, other):
         if isinstance(other, Node):
-            return self.pos == other.pos
+            return self.pos == other.pos and self.heading == other.heading
         return False
 
     def __lt__(self, other):
