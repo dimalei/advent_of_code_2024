@@ -1,8 +1,5 @@
 from enum import Enum
 
-global nodes
-nodes = 0
-
 
 class Vector2:
     def __init__(self, x: int, y: int):
@@ -30,9 +27,6 @@ class Vector2:
             return False
         return self._x == other._x and self._y == other._y
 
-    def __str__(self):
-        return f"({self._x},{self._y})"
-
 
 class Heading(Enum):
     NORTH = Vector2(0, -1)
@@ -50,6 +44,12 @@ class Heading(Enum):
         directions = list(Heading)
         current_index = directions.index(self)
         next_index = (current_index - 1) % len(directions)
+        return directions[next_index]
+
+    def turn_180(self):
+        directions = list(Heading)
+        current_index = directions.index(self)
+        next_index = (current_index + 2) % len(directions)
         return directions[next_index]
 
     def __str__(self):
@@ -80,7 +80,7 @@ class Node:
 
     def __eq__(self, other):
         if isinstance(other, Node):
-            return self.pos == other.pos and self.heading == other.heading
+            return self.pos == other.pos and (self.heading == other.heading or self.heading == other.heading.turn_180)
         return False
 
     def __lt__(self, other):
@@ -96,11 +96,10 @@ class Maze:
         self.paths = []
         self.start = None
         self.exit = None
-        self.start_node = None
-        self.processed_nodes = []
         self.exit_node = None
         self.parse_input(file_name)
-        self.create_root()
+        self.start_node = self.create_root()
+        self.processed_nodes = []
         self.trail = {}
 
     def parse_input(self, file_name):
@@ -116,14 +115,12 @@ class Maze:
                         self.start = (Vector2(x, y))
                         self.paths.append(self.start)
 
-    def create_root(self):
+    def create_root(self) -> Node:
         directions = self.see_ahead(self.start, Heading.EAST)
         edges = {}
         for direction in directions:
             edges[direction] = None
-        print(f"initial brnaches: {edges}")
-        self.start_node = Node(self.start, Heading.EAST, edges, {}, 0, None)
-        self.processed_nodes.append(self.start_node)
+        return Node(self.start, Heading.EAST, edges, {}, 0, None)
 
     def see_ahead(self, player_pos: Vector2, player_heading: Heading) -> list:
         directions = []
